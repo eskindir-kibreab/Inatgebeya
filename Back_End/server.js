@@ -12,6 +12,7 @@ config();
 
 // Import routes
 import authRoutes from "./src/routes/auth.routes.js";
+import userRoutes from "./src/routes/user.routes.js";
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/uploads", express.static("uploads"));
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
