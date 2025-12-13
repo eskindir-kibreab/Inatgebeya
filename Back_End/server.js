@@ -15,6 +15,7 @@ import authRoutes from "./src/routes/auth.routes.js";
 import userRoutes from "./src/routes/user.routes.js";
 import shopRoutes from "./src/routes/shop.routes.js";
 import productRoutes from "./src/routes/product.routes.js";
+import categoryRoutes from "./src/routes/category.routes.js";
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/shops", shopRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
