@@ -16,6 +16,7 @@ import userRoutes from "./src/routes/user.routes.js";
 import shopRoutes from "./src/routes/shop.routes.js";
 import productRoutes from "./src/routes/product.routes.js";
 import categoryRoutes from "./src/routes/category.routes.js";
+import areaRoutes from "./src/routes/area.routes.js";
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/shops", shopRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/areas", areaRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
