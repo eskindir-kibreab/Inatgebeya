@@ -79,20 +79,20 @@ router.get(
     query("status").optional().isIn(["active", "inactive"]),
     query("search").optional().isString().trim(),
   ],
-  requirePermission("delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin"),
   getAllDeliveryPersons
 );
 
 router.get(
   "/delivery-persons/:id",
   [param("id").isInt()],
-  requirePermission("delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin"),
   getDeliveryPersonById
 );
 
 router.post(
   "/delivery-persons",
-  requirePermission("delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin"),
   deliveryPersonValidation,
   createDeliveryPerson
 );
@@ -100,14 +100,14 @@ router.post(
 router.put(
   "/delivery-persons/:id",
   [param("id").isInt(), body("area_id").optional().isInt()],
-  requirePermission("delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin"),
   updateDeliveryPerson
 );
 
 router.put(
   "/delivery-persons/:id/status",
   [param("id").isInt(), body("status").isIn(["active", "inactive"])],
-  requirePermission("delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin"),
   toggleDeliveryPersonStatus
 );
 
@@ -118,13 +118,13 @@ router.get(
     query("limit").optional().isInt({ min: 1, max: 100 }),
     query("area_id").optional().isInt(),
   ],
-  requirePermission("delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin"),
   getPendingDeliveries
 );
 
 router.post(
   "/assign",
-  requirePermission("delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin"),
   assignDeliveryValidation,
   assignDelivery
 );
@@ -138,7 +138,7 @@ router.get(
     query("start_date").optional().isDate(),
     query("end_date").optional().isDate(),
   ],
-  requirePermission("delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin"),
   getDeliveryStats
 );
 
