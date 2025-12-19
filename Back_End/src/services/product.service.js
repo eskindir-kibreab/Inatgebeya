@@ -2,26 +2,32 @@ import pool from "../config/db.js";
 
 export class ProductService {
   // Get all products with filters and pagination
+  // Get all products with filters and pagination
   static async getAllProducts(filters = {}, page = 1, limit = 20) {
-    const {
-      category_id,
-      shop_id,
-      min_price,
-      max_price,
-      search,
-      is_active = true,
-    } = filters;
+    const { category_id, shop_id, min_price, max_price, search, is_active } =
+      filters;
     const offset = (page - 1) * limit;
 
     let query = `
-      SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
-      FROM Products p
-      JOIN ProductCategories pc ON p.category_id = pc.category_id
-      JOIN Shops s ON p.shop_id = s.shop_id
-      JOIN Users u ON p.created_by = u.user_id
-      WHERE p.is_active = ?
-    `;
-    const params = [is_active];
+    SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+  `;
+    const params = [];
+
+    // Handle is_active filter
+    if (is_active !== undefined && is_active !== "") {
+      // Convert string to boolean if needed
+      const activeStatus = is_active === "true" || is_active === true;
+      query += " AND p.is_active = ?";
+      params.push(activeStatus);
+    } else {
+      // Default: show only active products
+      query += " AND p.is_active = TRUE";
+    }
 
     if (category_id) {
       query += " AND p.category_id = ?";
@@ -96,7 +102,6 @@ export class ProductService {
       },
     };
   }
-
   // Get product by ID
   static async getProductById(productId) {
     const [products] = await pool.query(

@@ -13,7 +13,7 @@ export const getAllProducts = async (req, res) => {
       min_price,
       max_price,
       search,
-      is_active = true,
+      is_active,
     } = req.query;
 
     const result = await ProductService.getAllProducts(
