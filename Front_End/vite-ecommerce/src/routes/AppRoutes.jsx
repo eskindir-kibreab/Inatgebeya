@@ -32,13 +32,6 @@ const AdminDeliveries = lazy(() => import("../pages/admin/Deliveries.jsx"));
 const AdminTeam = lazy(() => import("../pages/admin/Team.jsx"));
 const AdminAssign = lazy(() => import("../pages/admin/AdminAssign.jsx"));
 
-// Item Adder pages
-const ItemAdderDashboard = lazy(() =>
-  import("../pages/item-adder/Dashboard.jsx")
-);
-const ItemAdderProducts = lazy(() =>
-  import("../pages/item-adder/Products.jsx")
-);
 
 // Shop Owner pages
 const ShopOwnerDashboard = lazy(() =>
@@ -178,23 +171,7 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Item Adder Routes */}
-        <Route
-          path="/item-adder/dashboard"
-          element={
-            <ProtectedRoute roles={["item_adder_admin"]}>
-              <ItemAdderDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/item-adder/products"
-          element={
-            <ProtectedRoute roles={["item_adder_admin"]}>
-              <ItemAdderProducts />
-            </ProtectedRoute>
-          }
-        />
+
 
         {/* Shop Owner Routes */}
         <Route
