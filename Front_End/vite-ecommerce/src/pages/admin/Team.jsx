@@ -1,0 +1,441 @@
+import React, { useState, useEffect } from "react";
+import {
+  Users,
+  MapPin,
+  Phone,
+  Mail,
+  Edit,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
+import { deliveryAPI } from "../../api/delivery.api";
+import { areasAPI } from "../../api/areas.api";
+import Input from "../../components/forms/Input";
+import Button from "../../components/forms/Button";
+import Select from "../../components/forms/Select";
+import toast from "react-hot-toast";
+
+const AdminTeam = () => {
+  const [deliveryPersons, setDeliveryPersons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    area_id: "",
+    password: "",
+  });
+  const [areas, setAreas] = useState([]);
+
+  useEffect(() => {
+    fetchDeliveryPersons();
+    fetchAreas();
+  }, []);
+
+  const fetchDeliveryPersons = async () => {
+    try {
+      setLoading(true);
+      const response = await deliveryAPI.getDeliveryPersons();
+      if (response.success) {
+        setDeliveryPersons(response.data);
+      }
+    } catch (error) {
+      toast.error("Failed to load delivery persons");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAreas = async () => {
+    try {
+      const response = await areasAPI.getAll();
+      if (response.success) {
+        setAreas(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching areas:", error);
+    }
+  };
+
+  const handleAddPerson = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await deliveryAPI.createDeliveryPerson(formData);
+      if (response.success) {
+        toast.success("Delivery person added successfully");
+        setShowAddModal(false);
+        fetchDeliveryPersons();
+        resetForm();
+      }
+    } catch (error) {
+      toast.error("Failed to add delivery person");
+    }
+  };
+
+  const handleUpdatePerson = async (e) => {
+    e.preventDefault();
+    if (!selectedPerson) return;
+
+    try {
+      const response = await deliveryAPI.updateDeliveryPerson(
+        selectedPerson.id,
+        formData
+      );
+      if (response.success) {
+        toast.success("Delivery person updated successfully");
+        setShowEditModal(false);
+        fetchDeliveryPersons();
+        resetForm();
+      }
+    } catch (error) {
+      toast.error("Failed to update delivery person");
+    }
+  };
+
+  const handleDeletePerson = async (personId) => {
+    if (
+      !window.confirm("Are you sure you want to delete this delivery person?")
+    )
+      return;
+
+    try {
+      // Note: In the actual API, you might need to deactivate instead of delete
+      const response = await deliveryAPI.updateDeliveryPersonStatus(personId, {
+        status: "inactive",
+      });
+      if (response.success) {
+        toast.success("Delivery person deactivated");
+        fetchDeliveryPersons();
+      }
+    } catch (error) {
+      toast.error("Failed to deactivate delivery person");
+    }
+  };
+
+  const handleToggleStatus = async (personId, currentStatus) => {
+    try {
+      const newStatus = currentStatus === "active" ? "inactive" : "active";
+      const response = await deliveryAPI.updateDeliveryPersonStatus(personId, {
+        status: newStatus,
+      });
+      if (response.success) {
+        toast.success(
+          `Delivery person ${
+            newStatus === "active" ? "activated" : "deactivated"
+          }`
+        );
+        fetchDeliveryPersons();
+      }
+    } catch (error) {
+      toast.error("Failed to update status");
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      area_id: "",
+      password: "",
+    });
+    setSelectedPerson(null);
+  };
+
+  const areaOptions = [
+    { value: "", label: "Select Area" },
+    ...areas.map((area) => ({
+      value: area.id,
+      label: area.area_name,
+    })),
+  ];
+
+  return (
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-text-main dark:text-gray-200">
+              Delivery Team
+            </h1>
+            <p className="text-text-secondary dark:text-gray-400 mt-2">
+              Manage your delivery team members
+            </p>
+          </div>
+          <Button onClick={() => setShowAddModal(true)} icon={UserPlus}>
+            Add Delivery Person
+          </Button>
+        </div>
+      </div>
+
+      {/* Delivery Persons Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {deliveryPersons.map((person) => (
+            <div
+              key={person.id}
+              className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
+                       dark:border-gray-700 p-6"
+            >
+              {/* Person Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Users className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-text-main dark:text-gray-200">
+                      {person.name}
+                    </h3>
+                    <p className="text-sm text-text-secondary dark:text-gray-400">
+                      ID: #{person.id}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleToggleStatus(person.id, person.status)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium
+                            ${
+                              person.status === "active"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                            }`}
+                >
+                  {person.status}
+                </button>
+              </div>
+
+              {/* Person Details */}
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-text-secondary" />
+                  <span className="text-text-secondary dark:text-gray-400">
+                    {person.phone}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-text-secondary" />
+                  <span className="text-text-secondary dark:text-gray-400">
+                    {person.email}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <MapPin className="w-4 h-4 text-text-secondary" />
+                  <span className="text-text-secondary dark:text-gray-400">
+                    {person.area_name}
+                  </span>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">
+                    {person.total_deliveries || 0}
+                  </div>
+                  <div className="text-sm text-text-secondary dark:text-gray-400">
+                    Total Deliveries
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-accent">
+                    {person.deliveries_today || 0}
+                  </div>
+                  <div className="text-sm text-text-secondary dark:text-gray-400">
+                    Today
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedPerson(person);
+                    setFormData({
+                      name: person.name,
+                      email: person.email,
+                      phone: person.phone,
+                      area_id: person.area_id,
+                      password: "",
+                    });
+                    setShowEditModal(true);
+                  }}
+                  className="flex-1 py-2 border border-border-default 
+                           dark:border-gray-700 rounded-lg hover:bg-gray-50 
+                           dark:hover:bg-gray-700 flex items-center justify-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeletePerson(person.id)}
+                  className="p-2 border border-red-200 dark:border-red-800 
+                           text-red-600 rounded-lg hover:bg-red-50 
+                           dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add Person Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold text-text-main dark:text-gray-200 mb-6">
+              Add Delivery Person
+            </h2>
+            <form onSubmit={handleAddPerson}>
+              <Input
+                label="Full Name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                required
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                }
+                required
+              />
+              <Input
+                label="Phone Number"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
+                required
+              />
+              <Select
+                label="Area"
+                value={formData.area_id}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, area_id: e.target.value }))
+                }
+                options={areaOptions}
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, password: e.target.value }))
+                }
+                required
+              />
+              <div className="flex gap-3 mt-6">
+                <Button type="submit" className="flex-1">
+                  Add Person
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Person Modal */}
+      {showEditModal && selectedPerson && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold text-text-main dark:text-gray-200 mb-6">
+              Edit Delivery Person
+            </h2>
+            <form onSubmit={handleUpdatePerson}>
+              <Input
+                label="Full Name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                required
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                }
+                required
+              />
+              <Input
+                label="Phone Number"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
+                required
+              />
+              <Select
+                label="Area"
+                value={formData.area_id}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, area_id: e.target.value }))
+                }
+                options={areaOptions}
+                required
+              />
+              <Input
+                label="New Password (leave blank to keep current)"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, password: e.target.value }))
+                }
+              />
+              <div className="flex gap-3 mt-6">
+                <Button type="submit" className="flex-1">
+                  Update Person
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    resetForm();
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminTeam;
