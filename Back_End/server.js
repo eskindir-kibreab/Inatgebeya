@@ -44,8 +44,17 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import { existsSync } from "fs";
+
+// ... (keep existing imports)
+
 // Serve uploaded files
-app.use("/uploads", express.static(join(process.cwd(), "uploads")));
+const uploadsPath = join(__dirname, "uploads");
+console.log("Serving uploads from:", uploadsPath);
+app.use("/uploads", express.static(uploadsPath));
 
 // Routes
 app.use("/api/auth", authRoutes);

@@ -46,11 +46,13 @@ const ProductGrid = ({
         // Normalize backend fields (product_id -> id, avg_rating -> average_rating)
         const mapped = Array.isArray(response.data)
           ? response.data.map((p) => ({
-              ...p,
-              id: p.id ?? p.product_id,
-              average_rating: p.average_rating ?? p.avg_rating ?? 0,
-            }))
+            ...p,
+            id: p.id ?? p.product_id,
+            average_rating: p.average_rating ?? p.avg_rating ?? 0,
+          }))
           : [];
+
+        console.log("Landing Page Products Data:", mapped);
 
         if (reset) {
           setProducts(mapped);
