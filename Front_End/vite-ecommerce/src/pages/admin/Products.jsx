@@ -53,10 +53,22 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await productsAPI.getAll(filters);
+
+      // Clean filters to remove empty strings
+      const cleanedFilters = Object.fromEntries(
+        Object.entries(filters).filter(([_, v]) => v !== "" && v !== null)
+      );
+
+      console.log("Fetching products with params:", cleanedFilters);
+      const response = await productsAPI.getAll(cleanedFilters);
 
       if (response.success) {
-        setProducts(response.data);
+        // Normalize product data
+        const normalizedProducts = response.data.map((p) => ({
+          ...p,
+          id: p.id || p.product_id,
+        }));
+        setProducts(normalizedProducts);
         setPagination(response.pagination || {});
       }
     } catch (error) {
@@ -108,7 +120,8 @@ const Products = () => {
         fetchProducts();
       }
     } catch (error) {
-      toast.error("Failed to update product status");
+      console.error("Toggle status error:", error);
+      toast.error(error.response?.data?.message || "Failed to update product status");
     }
   };
 
@@ -123,7 +136,8 @@ const Products = () => {
         fetchProducts();
       }
     } catch (error) {
-      toast.error("Failed to delete product");
+      console.error("Delete product error:", error);
+      toast.error(error.response?.data?.message || "Failed to delete product");
     }
   };
 
@@ -164,7 +178,8 @@ const Products = () => {
         fetchProducts();
       }
     } catch (error) {
-      toast.error("Failed to add product");
+      console.error("Add product error:", error);
+      toast.error(error.response?.data?.message || "Failed to add product");
     }
   };
 
@@ -197,10 +212,8 @@ const Products = () => {
   const getImageUrl = (path) => {
     if (!path) return "/placeholder.jpg";
     if (path.startsWith("http")) return path;
-    const baseUrl =
-      import.meta.env.VITE_API_URL?.replace("/api", "") ||
-      "http://localhost:5000";
-    return `${baseUrl}${path}`;
+    // Use relative path to leverage vite proxy
+    return path;
   };
 
 

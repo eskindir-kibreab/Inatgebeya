@@ -190,6 +190,15 @@ export const deleteProduct = async (req, res) => {
     });
   } catch (error) {
     console.error("Delete product error:", error);
+
+    // Handle foreign key constraint (product has orders)
+    if (error.errno === 1451) {
+      return res.status(409).json({
+        success: false,
+        message: "Cannot delete this product because it has been ordered. Please deactivate it instead.",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to delete product",
@@ -238,9 +247,8 @@ export const toggleProductStatus = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Product ${
-        is_active ? "activated" : "deactivated"
-      } successfully`,
+      message: `Product ${is_active ? "activated" : "deactivated"
+        } successfully`,
     });
   } catch (error) {
     console.error("Toggle product status error:", error);
@@ -379,9 +387,8 @@ export const rateProduct = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Product ${
-        result.updated ? "rating updated" : "rated"
-      } successfully`,
+      message: `Product ${result.updated ? "rating updated" : "rated"
+        } successfully`,
       data: { ratingId: result.id },
     });
   } catch (error) {
