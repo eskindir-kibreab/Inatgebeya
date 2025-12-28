@@ -32,7 +32,10 @@ const AdminDeliveries = lazy(() => import("../pages/admin/Deliveries.jsx"));
 const AdminTeam = lazy(() => import("../pages/admin/Team.jsx"));
 const AdminAssign = lazy(() => import("../pages/admin/AdminAssign.jsx"));
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
 // Shop Owner pages
 const ShopOwnerDashboard = lazy(() =>
   import("../pages/shop-owner/Dashboard.jsx")
@@ -171,8 +174,11 @@ const AppRoutes = () => {
           }
         />
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> main
         {/* Shop Owner Routes */}
         <Route
           path="/shop-owner/dashboard"

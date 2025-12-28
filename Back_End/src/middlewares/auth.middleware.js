@@ -9,12 +9,10 @@ export const authMiddleware = async (req, res, next) => {
     const token = req.header("Authorization")?.replace("Bearer ", "") || null;
 
     if (!token) {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: "No authentication token, access denied",
-        });
+      return res.status(401).json({
+        success: false,
+        message: "No authentication token, access denied",
+      });
     }
 
     // Check token exists in DB (and optionally check expires_at)
@@ -44,15 +42,11 @@ export const authMiddleware = async (req, res, next) => {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
       // invalid signature or expired
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message:
-            err.name === "TokenExpiredError"
-              ? "Token expired"
-              : "Invalid token",
-        });
+      return res.status(401).json({
+        success: false,
+        message:
+          err.name === "TokenExpiredError" ? "Token expired" : "Invalid token",
+      });
     }
 
     // Ensure user is active
