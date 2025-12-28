@@ -53,10 +53,22 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await productsAPI.getAll(filters);
+
+      // Clean filters to remove empty strings
+      const cleanedFilters = Object.fromEntries(
+        Object.entries(filters).filter(([_, v]) => v !== "" && v !== null)
+      );
+
+      console.log("Fetching products with params:", cleanedFilters);
+      const response = await productsAPI.getAll(cleanedFilters);
 
       if (response.success) {
-        setProducts(response.data);
+        // Normalize product data
+        const normalizedProducts = response.data.map((p) => ({
+          ...p,
+          id: p.id || p.product_id,
+        }));
+        setProducts(normalizedProducts);
         setPagination(response.pagination || {});
       }
     } catch (error) {
@@ -108,7 +120,8 @@ const Products = () => {
         fetchProducts();
       }
     } catch (error) {
-      toast.error("Failed to update product status");
+      console.error("Toggle status error:", error);
+      toast.error(error.response?.data?.message || "Failed to update product status");
     }
   };
 
@@ -123,7 +136,8 @@ const Products = () => {
         fetchProducts();
       }
     } catch (error) {
-      toast.error("Failed to delete product");
+      console.error("Delete product error:", error);
+      toast.error(error.response?.data?.message || "Failed to delete product");
     }
   };
 
@@ -164,7 +178,8 @@ const Products = () => {
         fetchProducts();
       }
     } catch (error) {
-      toast.error("Failed to add product");
+      console.error("Add product error:", error);
+      toast.error(error.response?.data?.message || "Failed to add product");
     }
   };
 
@@ -193,6 +208,15 @@ const Products = () => {
   const formatCurrency = (amount) => {
     return `ETB ${amount?.toLocaleString() || "0"}`;
   };
+
+  const getImageUrl = (path) => {
+    if (!path) return "/placeholder.jpg";
+    if (path.startsWith("http")) return path;
+    // Use relative path to leverage vite proxy
+    return path;
+  };
+
+
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -331,9 +355,11 @@ const Products = () => {
                                             dark:hover:bg-gray-700"
                   >
                     <td className="p-6">
+
                       <div className="flex items-center gap-3">
+                        {console.log("Image URL:", getImageUrl(product.main_image))}
                         <img
-                          src={product.main_image || "/placeholder.jpg"}
+                          src={getImageUrl(product.main_image)}
                           alt={product.product_name}
                           className="w-12 h-12 object-cover rounded"
                         />
@@ -358,11 +384,10 @@ const Products = () => {
                     <td className="p-6">
                       <span
                         className={`px-3 py-1 rounded-full text-sm
-                                     ${
-                                       (product.stock || 0) > 10
-                                         ? "bg-green-100 text-green-800 dark:bg-green-900/20"
-                                         : "bg-red-100 text-red-800 dark:bg-red-900/20"
-                                     }`}
+                                     ${(product.stock || 0) > 10
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/20"
+                          }`}
                       >
                         {product.stock || 0} in stock
                       </span>
@@ -506,7 +531,7 @@ const Products = () => {
                     options={[
                       { value: "", label: "Select Category" },
                       ...categories.map((cat) => ({
-                        value: cat.id,
+                        value: cat.category_id,
                         label: cat.category_name,
                       })),
                     ]}
@@ -525,7 +550,7 @@ const Products = () => {
                     options={[
                       { value: "", label: "Select Shop" },
                       ...shops.map((shop) => ({
-                        value: shop.id,
+                        value: shop.shop_id,
                         label: shop.shop_name,
                       })),
                     ]}
