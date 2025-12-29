@@ -8,6 +8,7 @@ import Input from "../../components/forms/Input";
 import Select from "../../components/forms/Select";
 import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
+import PaymentModal from "../../components/checkout/PaymentModal";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const Checkout = () => {
   });
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
   const [orderNote, setOrderNote] = useState("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const subtotal = getCartTotal();
   const shipping = subtotal > 500 ? 0 : 50;
@@ -36,7 +38,7 @@ const Checkout = () => {
     setAddresses([]);
   }, []);
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async (isSimulatedPay = false) => {
     if (!selectedAddress && !newAddress.street) {
       toast.error("Please select or enter a delivery address");
       return;
@@ -47,21 +49,35 @@ const Checkout = () => {
       return;
     }
 
+    // If mobile banking and not yet simulated, show modal first
+    console.log("Payment method:", paymentMethod, "isSimulatedPay:", isSimulatedPay);
+    if ((paymentMethod === 'mobile_banking' || paymentMethod === 'bank_transfer') && !isSimulatedPay) {
+      console.log("Should show payment modal!");
+      setShowPaymentModal(true);
+      return;
+    }
+
     setLoading(true);
     try {
+      console.log("Cart items:", cartItems);
+
       // Group items by shop
       const itemsByShop = {};
       cartItems.forEach((item) => {
+        console.log("Processing cart item:", JSON.stringify(item, null, 2));
+        console.log("item.id:", item.id, "typeof:", typeof item.id);
         if (!itemsByShop[item.shop_id]) {
           itemsByShop[item.shop_id] = [];
         }
         itemsByShop[item.shop_id].push({
-          product_id: item.id,
+          product_id: parseInt(item.id),
           quantity: item.quantity,
-          price: item.price,
-          size_id: item.size,
+          price: parseFloat(item.price),
+          size_id: item.size_id ? parseInt(item.size_id) : null,
         });
       });
+
+      console.log("Items by shop:", itemsByShop);
 
       // Create orders for each shop
       const orderPromises = Object.entries(itemsByShop).map(
@@ -71,9 +87,10 @@ const Checkout = () => {
             : `${newAddress.street}, ${newAddress.city}`;
 
           return ordersAPI.create({
-            shop_id: shopId,
+            shop_id: parseInt(shopId),
             delivery_address: deliveryAddress,
             items,
+            payment_method: paymentMethod,
           });
         }
       );
@@ -89,10 +106,11 @@ const Checkout = () => {
         toast.error("Some orders failed to process");
       }
     } catch (error) {
-      console.error("Order error:", error);
+      console.error("Place order error details:", error.response?.data || error);
+      console.error("Full error object:", JSON.stringify(error.response?.data, null, 2));
       toast.error(
         error.response?.data?.message ||
-          "Failed to place order. Please try again."
+        "Failed to place order. Please try again."
       );
     } finally {
       setLoading(false);
@@ -176,20 +194,18 @@ const Checkout = () => {
                     key={address.id}
                     onClick={() => setSelectedAddress(address.id)}
                     className={`p-4 border rounded-lg cursor-pointer transition-colors
-                              ${
-                                selectedAddress === address.id
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border-default dark:border-gray-700 hover:border-primary"
-                              }`}
+                              ${selectedAddress === address.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border-default dark:border-gray-700 hover:border-primary"
+                      }`}
                   >
                     <div className="flex items-start gap-3">
                       <div
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center
-                                    ${
-                                      selectedAddress === address.id
-                                        ? "border-primary bg-primary"
-                                        : "border-border-default dark:border-gray-700"
-                                    }`}
+                                    ${selectedAddress === address.id
+                            ? "border-primary bg-primary"
+                            : "border-border-default dark:border-gray-700"
+                          }`}
                       >
                         {selectedAddress === address.id && (
                           <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -293,20 +309,18 @@ const Checkout = () => {
                   key={method.id}
                   onClick={() => setPaymentMethod(method.id)}
                   className={`p-4 border rounded-lg cursor-pointer transition-colors
-                            ${
-                              paymentMethod === method.id
-                                ? "border-primary bg-primary/5"
-                                : "border-border-default dark:border-gray-700 hover:border-primary"
-                            }`}
+                            ${paymentMethod === method.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border-default dark:border-gray-700 hover:border-primary"
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center
-                                  ${
-                                    paymentMethod === method.id
-                                      ? "border-primary bg-primary"
-                                      : "border-border-default dark:border-gray-700"
-                                  }`}
+                                  ${paymentMethod === method.id
+                          ? "border-primary bg-primary"
+                          : "border-border-default dark:border-gray-700"
+                        }`}
                     >
                       {paymentMethod === method.id && (
                         <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -433,6 +447,18 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Simulation Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onPaymentSuccess={() => {
+          setShowPaymentModal(false);
+          handlePlaceOrder(true);
+        }}
+        amount={total}
+        method={paymentMethod}
+      />
     </div>
   );
 };

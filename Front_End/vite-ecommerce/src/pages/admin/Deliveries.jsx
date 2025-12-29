@@ -219,6 +219,25 @@ const Deliveries = () => {
                       </p>
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="flex-1">
+                      <p className="text-xs text-text-secondary dark:text-gray-400 uppercase tracking-wider font-bold">
+                        Payment
+                      </p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-sm font-medium dark:text-gray-200">
+                          {delivery.payment_method?.replace(/_/g, " ").toUpperCase() || "COD"}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold
+                          ${delivery.payment_status === 'paid'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'}`}>
+                          {delivery.payment_status || 'Pending'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Actions */}

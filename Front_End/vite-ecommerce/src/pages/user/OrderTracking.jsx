@@ -166,23 +166,21 @@ const OrderTracking = () => {
                 >
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center mb-2
-                                ${
-                                  step.completed
-                                    ? "bg-status-success text-white"
-                                    : step.current
-                                    ? "bg-primary text-white"
-                                    : "bg-bg-light dark:bg-gray-700 text-text-muted"
-                                }`}
+                                ${step.completed
+                        ? "bg-status-success text-white"
+                        : step.current
+                          ? "bg-primary text-white"
+                          : "bg-bg-light dark:bg-gray-700 text-text-muted"
+                      }`}
                   >
                     <Icon className="w-5 h-5" />
                   </div>
                   <span
                     className={`text-sm font-medium
-                                  ${
-                                    step.completed || step.current
-                                      ? "text-text-main dark:text-gray-200"
-                                      : "text-text-muted"
-                                  }`}
+                                  ${step.completed || step.current
+                        ? "text-text-main dark:text-gray-200"
+                        : "text-text-muted"
+                      }`}
                   >
                     {step.label}
                   </span>
@@ -363,14 +361,20 @@ const OrderTracking = () => {
               <div className="text-text-secondary dark:text-gray-400 space-y-1">
                 <p>
                   Method:{" "}
-                  {order.payment_method?.replace("_", " ").toUpperCase() ||
-                    "Cash on Delivery"}
+                  {order.payment_method?.replace(/_/g, " ").toUpperCase() ||
+                    "CASH ON DELIVERY"}
                 </p>
                 <p>
                   Status:{" "}
-                  <span className="text-status-success capitalize">Paid</span>
+                  <span className={`${order.payment_status === 'paid' ? 'text-status-success' : 'text-status-warning'} capitalize`}>
+                    {order.payment_status || 'Pending'}
+                  </span>
                 </p>
-                <p>Paid on: {formatDate(order.created_at)}</p>
+                {order.payment_status === 'paid' ? (
+                  <p>Paid on: {formatDate(order.created_at)}</p>
+                ) : (
+                  <p>Payment required upon delivery</p>
+                )}
               </div>
             </div>
 

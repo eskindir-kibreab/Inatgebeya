@@ -126,15 +126,22 @@ const OrderDetailsModal = ({
                         <span className="font-medium">
                           {order.payment_method === "cash_on_delivery"
                             ? "Cash on Delivery"
-                            : "Online Payment"}
+                            : order.payment_method === "mobile_banking"
+                              ? "Mobile Banking"
+                              : order.payment_method === "bank_transfer"
+                                ? "Bank Transfer"
+                                : "Online Payment"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600 dark:text-gray-400">
                           Payment Status
                         </span>
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                          {order.payment_status || "Paid"}
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full 
+                          ${order.payment_status === 'paid'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'}`}>
+                          {order.payment_status?.toUpperCase() || "PENDING"}
                         </span>
                       </div>
                     </div>

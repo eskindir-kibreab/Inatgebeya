@@ -39,7 +39,7 @@ export const CartProvider = ({ children }) => {
     }
   }, [isAuthenticated, user?.id]);
 
-  const addToCart = (product, quantity = 1, size = null) => {
+  const addToCart = (product, quantity = 1, size = null, sizeId = null) => {
     if (!isAuthenticated) {
       // Save intended action and redirect to login
       localStorage.setItem("redirectAfterLogin", window.location.pathname);
@@ -67,12 +67,13 @@ export const CartProvider = ({ children }) => {
           image: product.main_image,
           quantity,
           size,
+          size_id: sizeId,
           shop_id: product.shop_id,
         };
         userCart.push(newItem);
         toast.success(`Added ${product.product_name} to cart`);
       }
-      
+
       return {
         ...prev,
         [user.id]: userCart
@@ -83,7 +84,7 @@ export const CartProvider = ({ children }) => {
 
   const removeFromCart = (itemId, size = null) => {
     if (!isAuthenticated) return;
-    
+
     setUserCarts(prev => {
       const updatedCart = (prev[user.id] || []).filter(
         item => !(item.id === itemId && item.size === size)
@@ -98,7 +99,7 @@ export const CartProvider = ({ children }) => {
 
   const updateQuantity = (itemId, quantity, size = null) => {
     if (!isAuthenticated) return;
-    
+
     if (quantity < 1) {
       removeFromCart(itemId, size);
       return;
@@ -114,7 +115,7 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = () => {
     if (!isAuthenticated) return;
-    
+
     setUserCarts(prev => ({
       ...prev,
       [user.id]: []
