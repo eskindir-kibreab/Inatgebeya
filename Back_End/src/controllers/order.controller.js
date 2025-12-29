@@ -96,8 +96,9 @@ export const createOrder = async (req, res) => {
     });
   }
 
-  const { shop_id, delivery_address, items } = req.body;
+  const { shop_id, delivery_address, items, payment_method } = req.body;
 
+  console.log("Create Order Request Body:", JSON.stringify(req.body, null, 2));
   try {
     // Validate items
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -137,6 +138,7 @@ export const createOrder = async (req, res) => {
       shop_id,
       delivery_address,
       items,
+      payment_method,
     });
 
     res.status(201).json({
@@ -145,10 +147,10 @@ export const createOrder = async (req, res) => {
       data: { orderId },
     });
   } catch (error) {
-    console.error("Create order error:", error);
+    console.error("Create order controller error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to create order",
+      message: error.message || "Failed to create order",
     });
   }
 };

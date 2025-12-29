@@ -35,7 +35,11 @@ const orderValidation = [
   body("items.*.price")
     .isFloat({ min: 0 })
     .withMessage("Valid price is required"),
-  body("items.*.size_id").optional().isInt(),
+  body("items.*.size_id").optional({ nullable: true }).isInt(),
+  body("payment_method")
+    .optional()
+    .isIn(["cash_on_delivery", "mobile_banking", "bank_transfer"])
+    .withMessage("Invalid payment method"),
 ];
 
 const returnValidation = [
