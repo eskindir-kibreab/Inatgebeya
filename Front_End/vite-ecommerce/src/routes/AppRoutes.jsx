@@ -34,6 +34,8 @@ const AdminAssign = lazy(() => import("../pages/admin/AdminAssign.jsx"));
 const AdminProductDetail = lazy(() =>
   import("../pages/admin/AdminProductDetail.jsx")
 );
+const AdminShops = lazy(() => import("../pages/admin/Shops.jsx"));
+const AdminAreas = lazy(() => import("../pages/admin/Areas.jsx"));
 
 
 // Shop Owner pages
@@ -178,6 +180,22 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute roles={["admin", "super_admin"]}>
               <AdminDeliveries />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/shops"
+          element={
+            <ProtectedRoute roles={["admin", "super_admin"]}>
+              <AdminShops />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/areas"
+          element={
+            <ProtectedRoute roles={["admin", "super_admin"]}>
+              <AdminAreas />
             </ProtectedRoute>
           }
         />
