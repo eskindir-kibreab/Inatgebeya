@@ -15,11 +15,11 @@ const Users = () => {
     role: "",
     is_active: "",
     page: 1,
-    limit: 20,
+    limit: 5,
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 5,
     total: 0,
     totalPages: 0,
   });
@@ -32,6 +32,7 @@ const Users = () => {
     phone: "",
     password: "",
     role_name: "user",
+    is_active: true,
   });
 
   useEffect(() => {
@@ -44,7 +45,10 @@ const Users = () => {
       const response = await usersAPI.getAllUsers(filters);
       if (response.success) {
         setUsers(response.data);
-        setPagination(response.pagination || {});
+        setPagination({
+          ...response.pagination,
+          totalPages: response.pagination.pages // Map backend 'pages' to frontend 'totalPages'
+        });
       }
     } catch (error) {
       toast.error("Failed to load users");
@@ -54,7 +58,11 @@ const Users = () => {
   };
 
   const handleFilterChange = (name, value) => {
-    setFilters((prev) => ({ ...prev, [name]: value, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value,
+      page: name === "page" ? value : 1,
+    }));
   };
 
   const handleRemoveFilter = (key) => {
@@ -85,7 +93,8 @@ const Users = () => {
       email: user.email,
       phone: user.phone || "",
       password: "",
-      role_name: user.role?.role_name || "user",
+      role_name: user.role_name || "user",
+      is_active: user.is_active,
     });
     setShowEditModal(true);
   };
@@ -113,15 +122,38 @@ const Users = () => {
       const updateData = { ...formData };
       if (!updateData.password) delete updateData.password;
 
-      const response = await usersAPI.updateUser(selectedUser.id, updateData);
-      if (response.success) {
+      // Update basic info
+      const profilePromise = usersAPI.updateUser(selectedUser.user_id, updateData);
+
+      // Update role if changed
+      const updatePromises = [profilePromise];
+      if (formData.role_name !== selectedUser.role_name) {
+        updatePromises.push(usersAPI.updateUserRole(selectedUser.user_id, formData.role_name));
+      }
+
+      const results = await Promise.all(updatePromises);
+
+      if (results.every(res => res.success)) {
         toast.success("User updated successfully");
         setShowEditModal(false);
         fetchUsers();
         resetForm();
       }
     } catch (error) {
-      toast.error("Failed to update user");
+      console.error("Update error:", error);
+      toast.error(error.response?.data?.message || "Failed to update user");
+    }
+  };
+
+  const handleToggleStatus = async (userId, currentStatus) => {
+    try {
+      const response = await usersAPI.updateUser(userId, { is_active: !currentStatus });
+      if (response.success) {
+        toast.success(`User ${!currentStatus ? 'activated' : 'deactivated'}`);
+        fetchUsers();
+      }
+    } catch (error) {
+      toast.error("Failed to update status");
     }
   };
 
@@ -158,6 +190,7 @@ const Users = () => {
       phone: "",
       password: "",
       role_name: "user",
+      is_active: true,
     });
     setSelectedUser(null);
   };
@@ -258,6 +291,9 @@ const Users = () => {
             <thead>
               <tr className="border-b border-border-default dark:border-gray-700">
                 <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
+                  ID
+                </th>
+                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
                   User
                 </th>
                 <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
@@ -296,6 +332,9 @@ const Users = () => {
                                             dark:border-gray-700 hover:bg-bg-light 
                                             dark:hover:bg-gray-700"
                   >
+                    <td className="p-6 font-mono text-xs text-text-secondary">
+                      #{user.user_id}
+                    </td>
                     <td className="p-6">
                       <div className="flex items-center gap-3">
                         <div
@@ -318,31 +357,31 @@ const Users = () => {
                     </td>
                     <td className="p-6">
                       <select
-                        value={user.role?.role_name || "user"}
+                        value={user.role_name || "user"}
                         onChange={(e) =>
-                          handleRoleChange(user.id, e.target.value)
+                          handleRoleChange(user.user_id, e.target.value)
                         }
                         className="px-3 py-1 border border-border-default dark:border-gray-700 
-                                 rounded-lg bg-transparent text-sm"
+                                 rounded-lg bg-transparent text-sm cursor-pointer hover:border-primary transition-colors"
                       >
                         {roleOptions.slice(1).map((option) => (
-                          <option key={option.value} value={option.value}>
+                          <option key={option.value} value={option.value} className="dark:bg-gray-800">
                             {option.label}
                           </option>
                         ))}
                       </select>
                     </td>
                     <td className="p-6">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium
-                                     ${
-                                       user.is_active
-                                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                         : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                                     }`}
+                      <button
+                        onClick={() => handleToggleStatus(user.user_id, user.is_active)}
+                        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors
+                                     ${user.is_active
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-200"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-200"
+                          }`}
                       >
                         {user.is_active ? "Active" : "Inactive"}
-                      </span>
+                      </button>
                     </td>
                     <td className="p-6 text-text-secondary dark:text-gray-400">
                       {formatDate(user.created_at)}
@@ -356,7 +395,7 @@ const Users = () => {
                           <Edit className="w-4 h-4 text-text-secondary" />
                         </button>
                         <button
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => handleDeleteUser(user.user_id)}
                           className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                         >
                           <Trash2 className="w-4 h-4 text-red-600" />
@@ -397,8 +436,10 @@ const Users = () => {
                     handleFilterChange("page", pagination.page - 1)
                   }
                   disabled={pagination.page === 1}
-                  className="px-4 py-2 border border-border-default rounded-lg 
-                           disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 border border-border-default dark:border-gray-700 rounded-lg 
+                           disabled:opacity-50 disabled:cursor-not-allowed
+                           hover:bg-bg-light dark:hover:bg-gray-700 transition-all duration-200
+                           text-sm font-medium text-text-main dark:text-gray-200"
                 >
                   Previous
                 </button>
@@ -407,8 +448,10 @@ const Users = () => {
                     handleFilterChange("page", pagination.page + 1)
                   }
                   disabled={pagination.page === pagination.totalPages}
-                  className="px-4 py-2 border border-border-default rounded-lg 
-                           disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 border border-border-default dark:border-gray-700 rounded-lg 
+                           disabled:opacity-50 disabled:cursor-not-allowed
+                           hover:bg-bg-light dark:hover:bg-gray-700 transition-all duration-200
+                           text-sm font-medium text-text-main dark:text-gray-200"
                 >
                   Next
                 </button>
@@ -544,6 +587,29 @@ const Users = () => {
                 }
                 options={roleOptions.slice(1)}
               />
+              <div className="flex items-center justify-between p-4 bg-bg-light dark:bg-gray-900 rounded-lg mt-4">
+                <div>
+                  <p className="font-medium text-text-main dark:text-gray-200">User Status</p>
+                  <p className="text-sm text-text-secondary dark:text-gray-400">
+                    {formData.is_active ? 'Active' : 'Inactive'}
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                                peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full 
+                                peer dark:bg-gray-700 peer-checked:after:translate-x-full 
+                                peer-checked:after:border-white after:content-[''] after:absolute 
+                                after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 
+                                after:border after:rounded-full after:h-5 after:w-5 after:transition-all 
+                                dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
               <div className="flex gap-3 mt-6">
                 <Button type="submit" className="flex-1">
                   Update User

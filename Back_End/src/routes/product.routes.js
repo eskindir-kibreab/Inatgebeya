@@ -16,6 +16,7 @@ import {
 } from "../controllers/product.controller.js";
 import {
   authMiddleware,
+  optionalAuth,
   requireRole,
   requirePermission,
 } from "../middlewares/auth.middleware.js";
@@ -50,6 +51,7 @@ const ratingValidation = [
 // Public routes
 router.get(
   "/",
+  optionalAuth,
   [
     query("page").optional().isInt({ min: 1 }),
     query("limit").optional().isInt({ min: 1, max: 100 }),
@@ -142,8 +144,11 @@ router.put(
     body("category_id").optional().isInt(),
     body("price").optional().isFloat({ min: 0 }),
     body("description").optional().isString(),
+    body("is_active").optional().toBoolean().isBoolean(),
   ],
   requireRole("super_admin", "admin", "item_adder_admin"),
+  uploadSingle("main_image"),
+  handleUploadError,
   updateProduct
 );
 

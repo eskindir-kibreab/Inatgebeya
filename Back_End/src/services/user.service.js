@@ -20,7 +20,7 @@ export class UserService {
       params.push(role);
     }
 
-    if (is_active !== undefined) {
+    if (is_active !== undefined && is_active !== "") {
       query += " AND u.is_active = ?";
       params.push(is_active === "true");
     }
@@ -40,7 +40,7 @@ export class UserService {
     const total = countResult[0].total;
 
     // Add pagination
-    query += " ORDER BY u.created_at DESC LIMIT ? OFFSET ?";
+    query += " ORDER BY u.user_id ASC LIMIT ? OFFSET ?";
     params.push(parseInt(limit), parseInt(offset));
 
     const [users] = await pool.query(query, params);
@@ -176,11 +176,10 @@ export class UserService {
     const [result] = await pool.query(
       `UPDATE UserCoins 
        SET balance = balance ${operation} ?, 
-           ${
-             type === "add"
-               ? "earned_total = earned_total + ?"
-               : "spent_total = spent_total + ?"
-           } 
+           ${type === "add"
+        ? "earned_total = earned_total + ?"
+        : "spent_total = spent_total + ?"
+      } 
        WHERE user_id = ?`,
       [Math.abs(amount), Math.abs(amount), userId]
     );

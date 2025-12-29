@@ -31,6 +31,11 @@ const AdminProducts = lazy(() => import("../pages/admin/Products.jsx"));
 const AdminDeliveries = lazy(() => import("../pages/admin/Deliveries.jsx"));
 const AdminTeam = lazy(() => import("../pages/admin/Team.jsx"));
 const AdminAssign = lazy(() => import("../pages/admin/AdminAssign.jsx"));
+const AdminProductDetail = lazy(() =>
+  import("../pages/admin/AdminProductDetail.jsx")
+);
+const AdminShops = lazy(() => import("../pages/admin/Shops.jsx"));
+const AdminAreas = lazy(() => import("../pages/admin/Areas.jsx"));
 
 <<<<<<< HEAD
 
@@ -166,10 +171,34 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/admin/products/:productId"
+          element={
+            <ProtectedRoute roles={["admin", "super_admin"]}>
+              <AdminProductDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/deliveries"
           element={
             <ProtectedRoute roles={["admin", "super_admin"]}>
               <AdminDeliveries />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/shops"
+          element={
+            <ProtectedRoute roles={["admin", "super_admin"]}>
+              <AdminShops />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/areas"
+          element={
+            <ProtectedRoute roles={["admin", "super_admin"]}>
+              <AdminAreas />
             </ProtectedRoute>
           }
         />

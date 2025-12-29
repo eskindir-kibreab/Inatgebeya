@@ -4,6 +4,9 @@ export const deliveryAPI = {
   // Delivery person: Get assigned deliveries
   getAssigned: (params) => api.get("/delivery/assigned", { params }),
 
+  // Delivery person: Get profile
+  getProfile: () => api.get("/delivery/profile"),
+
   // Delivery person: Update delivery status
   updateStatus: (id, data) => api.put(`/delivery/${id}/status`, data),
 

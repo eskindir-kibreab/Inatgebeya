@@ -1,0 +1,9 @@
+export * from "./auth.api";
+export * from "./users.api";
+export * from "./shops.api";
+export * from "./products.api";
+export * from "./categories.api";
+export * from "./areas.api";
+export * from "./orders.api";
+export * from "./delivery.api";
+export { default as api } from "./axios";

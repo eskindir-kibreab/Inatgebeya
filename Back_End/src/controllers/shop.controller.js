@@ -1,5 +1,6 @@
 import { validationResult } from "express-validator";
 import { ShopService } from "../services/shop.service.js";
+import { UserService } from "../services/user.service.js";
 
 // Get all shops
 export const getAllShops = async (req, res) => {
@@ -80,9 +81,12 @@ export const createShop = async (req, res) => {
       area_id,
     });
 
+    // Automatically promote owner to shop_owner role (ID: 4)
+    await UserService.changeUserRole(owner_id, 4);
+
     res.status(201).json({
       success: true,
-      message: "Shop created successfully",
+      message: "Shop created successfully and owner promoted",
       data: { shopId },
     });
   } catch (error) {
@@ -129,6 +133,11 @@ export const updateShop = async (req, res) => {
         success: false,
         message: "Shop not found or no changes made",
       });
+    }
+
+    // If owner_id was updated, promote the new owner to shop_owner role (ID: 4)
+    if (updates.owner_id) {
+      await UserService.changeUserRole(updates.owner_id, 4);
     }
 
     res.json({

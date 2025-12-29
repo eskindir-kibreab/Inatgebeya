@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { deliveryAPI } from "../../api/delivery.api";
 import { areasAPI } from "../../api/areas.api";
+import { shopsAPI } from "../../api/shops.api";
 import Input from "../../components/forms/Input";
 import Button from "../../components/forms/Button";
 import Select from "../../components/forms/Select";
@@ -26,13 +27,16 @@ const AdminTeam = () => {
     email: "",
     phone: "",
     area_id: "",
+    shop_id: "", // Added shop_id
     password: "",
   });
   const [areas, setAreas] = useState([]);
+  const [shops, setShops] = useState([]); // Added shops state
 
   useEffect(() => {
     fetchDeliveryPersons();
     fetchAreas();
+    fetchShops();
   }, []);
 
   const fetchDeliveryPersons = async () => {
@@ -57,6 +61,17 @@ const AdminTeam = () => {
       }
     } catch (error) {
       console.error("Error fetching areas:", error);
+    }
+  };
+
+  const fetchShops = async () => {
+    try {
+      const response = await shopsAPI.getAll({ limit: 100 });
+      if (response.success) {
+        setShops(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching shops:", error);
     }
   };
 
@@ -124,8 +139,7 @@ const AdminTeam = () => {
       });
       if (response.success) {
         toast.success(
-          `Delivery person ${
-            newStatus === "active" ? "activated" : "deactivated"
+          `Delivery person ${newStatus === "active" ? "activated" : "deactivated"
           }`
         );
         fetchDeliveryPersons();
@@ -141,6 +155,7 @@ const AdminTeam = () => {
       email: "",
       phone: "",
       area_id: "",
+      shop_id: "",
       password: "",
     });
     setSelectedPerson(null);
@@ -149,8 +164,17 @@ const AdminTeam = () => {
   const areaOptions = [
     { value: "", label: "Select Area" },
     ...areas.map((area) => ({
-      value: area.id,
+      value: area.area_id || area.id,
       label: area.area_name,
+    })),
+  ];
+
+  const shopOptions = [
+    { value: "", label: "Select Shop (Optional)" },
+    ...shops.map((shop) => ({
+      value: shop.shop_id || shop.id,
+      label: shop.shop_name,
+      area_id: shop.area_id,
     })),
   ];
 
@@ -208,11 +232,10 @@ const AdminTeam = () => {
                 <button
                   onClick={() => handleToggleStatus(person.id, person.status)}
                   className={`px-3 py-1 rounded-full text-sm font-medium
-                            ${
-                              person.status === "active"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                            }`}
+                            ${person.status === "active"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                      : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                    }`}
                 >
                   {person.status}
                 </button>
@@ -329,6 +352,20 @@ const AdminTeam = () => {
                   setFormData((prev) => ({ ...prev, phone: e.target.value }))
                 }
                 required
+              />
+              <Select
+                label="Assign to Shop (Optional - Auto-fills Area)"
+                value={formData.shop_id}
+                onChange={(e) => {
+                  const shopId = e.target.value;
+                  const shop = shops.find((s) => (s.shop_id || s.id) == shopId);
+                  setFormData((prev) => ({
+                    ...prev,
+                    shop_id: shopId,
+                    area_id: shop ? shop.area_id : prev.area_id,
+                  }));
+                }}
+                options={shopOptions}
               />
               <Select
                 label="Area"

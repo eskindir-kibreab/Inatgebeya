@@ -7,7 +7,7 @@ export const getAllProducts = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 20,
+      limit = 5,
       category_id,
       shop_id,
       min_price,
@@ -16,16 +16,36 @@ export const getAllProducts = async (req, res) => {
       is_active,
     } = req.query;
 
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 5;
+
+    const isAdmin = req.user && ["super_admin", "admin", "item_adder_admin", "shop_owner"].includes(req.user.role_name);
+
     const result = await ProductService.getAllProducts(
-      { category_id, shop_id, min_price, max_price, search, is_active },
-      page,
-      limit
+      {
+        category_id,
+        shop_id,
+        min_price,
+        max_price,
+        search,
+        is_active,
+        include_inactive: isAdmin && !is_active
+      },
+      pageNum,
+      limitNum
     );
+
+    const finalProducts = result.products.slice(0, limitNum);
+    const finalTotal = result.pagination.total;
 
     res.json({
       success: true,
-      data: result.products,
-      pagination: result.pagination,
+      data: finalProducts,
+      pagination: {
+        ...result.pagination,
+        total: finalTotal,
+        pages: Math.ceil(finalTotal / limitNum)
+      },
     });
   } catch (error) {
     console.error("Get products error:", error);
@@ -105,14 +125,18 @@ export const createProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log("Product Update Validation Errors:", errors.array());
     return res.status(400).json({
       success: false,
+      message: "Validation failed",
       errors: errors.array(),
     });
   }
 
   const { id } = req.params;
-  const updates = req.body;
+  const updates = { ...req.body };
+
+  console.log("Updating product ID:", id, "with data:", updates);
 
   try {
     // Check if product belongs to user's shop (for shop owners)
@@ -403,7 +427,7 @@ export const rateProduct = async (req, res) => {
 // Search products
 export const searchProducts = async (req, res) => {
   try {
-    const { q, page = 1, limit = 20 } = req.query;
+    const { q, page = 1, limit = 5 } = req.query;
 
     if (!q || q.trim().length < 2) {
       return res.status(400).json({

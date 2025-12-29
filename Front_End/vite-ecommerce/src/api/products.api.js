@@ -41,7 +41,12 @@ export const productsAPI = {
   updateStock: (id, data) => api.put(`/products/${id}/stock`, data),
 
   // Update product
-  update: (id, data) => api.put(`/products/${id}`, data),
+  update: (id, data) => {
+    if (data instanceof FormData) {
+      return api.put(`/products/${id}`, data);
+    }
+    return api.put(`/products/${id}`, data);
+  },
 
   // Delete product (admin)
   delete: (id) => api.delete(`/products/${id}`),
