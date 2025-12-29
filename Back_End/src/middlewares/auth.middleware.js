@@ -34,7 +34,7 @@ export const authMiddleware = async (req, res, next) => {
       // expired in DB
       await pool
         .query("DELETE FROM usertokens WHERE token = ?", [token])
-        .catch(() => {});
+        .catch(() => { });
       return res.status(401).json({ success: false, message: "Token expired" });
     }
 
@@ -78,6 +78,53 @@ export const authMiddleware = async (req, res, next) => {
     return res
       .status(401)
       .json({ success: false, message: "Authentication failed" });
+  }
+};
+
+// Optional auth middleware - populates req.user if token is valid, but doesn't block if not
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "") || null;
+
+    if (!token) {
+      return next();
+    }
+
+    const [rows] = await pool.query(
+      "SELECT * FROM usertokens WHERE token = ?",
+      [token]
+    );
+
+    if (rows.length === 0) {
+      return next();
+    }
+
+    if (rows[0].expires_at && new Date(rows[0].expires_at) < new Date()) {
+      return next();
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return next();
+    }
+
+    const [users] = await pool.query(
+      "SELECT u.*, r.role_name FROM Users u JOIN Roles r ON u.role_id = r.role_id WHERE u.user_id = ? AND u.is_active = TRUE",
+      [decoded.userId]
+    );
+
+    if (users.length > 0) {
+      req.user = users[0];
+      req.token = token;
+      req.userTokenRow = rows[0];
+    }
+
+    next();
+  } catch (error) {
+    console.error("Optional auth error:", error);
+    next();
   }
 };
 

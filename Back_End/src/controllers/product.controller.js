@@ -16,8 +16,19 @@ export const getAllProducts = async (req, res) => {
       is_active,
     } = req.query;
 
+    // Check if user is admin/shop_owner to include inactive products
+    const isAdmin = req.user && ["super_admin", "admin", "item_adder_admin", "shop_owner"].includes(req.user.role_name);
+
     const result = await ProductService.getAllProducts(
-      { category_id, shop_id, min_price, max_price, search, is_active },
+      {
+        category_id,
+        shop_id,
+        min_price,
+        max_price,
+        search,
+        is_active,
+        include_inactive: isAdmin && !is_active // Include inactive by default for admins if no explicit filter
+      },
       page,
       limit
     );

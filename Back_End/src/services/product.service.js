@@ -4,8 +4,14 @@ export class ProductService {
   // Get all products with filters and pagination
   // Get all products with filters and pagination
   static async getAllProducts(filters = {}, page = 1, limit = 20) {
-    const { category_id, shop_id, min_price, max_price, search, is_active } =
-      filters;
+    const {
+      category_id,
+      shop_id,
+      min_price,
+      max_price,
+      search,
+      is_active,
+    } = filters;
     const offset = (page - 1) * limit;
 
     let query = `
@@ -20,14 +26,15 @@ export class ProductService {
 
     // Handle is_active filter
     if (is_active !== undefined && is_active !== "") {
-      // Convert string to boolean if needed
+      // Explicit filter provided
       const activeStatus = is_active === "true" || is_active === true;
       query += " AND p.is_active = ?";
       params.push(activeStatus);
-    } else {
-      // Default: show only active products
+    } else if (filters.include_inactive !== true) {
+      // Default for non-admins: show only active products
       query += " AND p.is_active = TRUE";
     }
+    // If include_inactive is true, we don't add the is_active filter at all, showing everything
 
     if (category_id) {
       query += " AND p.category_id = ?";
