@@ -158,7 +158,7 @@ const Users = () => {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm("Are you sure you want to permanently delete this user and all their associated data (coins, profiles, etc.) from the database? This action cannot be undone.")) return;
 
     try {
       const response = await usersAPI.deleteUser(userId);
@@ -204,6 +204,8 @@ const Users = () => {
     { value: "delivery_admin", label: "Delivery Admin" },
     { value: "admin", label: "Admin" },
   ];
+
+  const filteredRoleOptions = roleOptions.filter(opt => opt.value !== "delivery_person");
 
   const statusOptions = [
     { value: "", label: "All Status" },
@@ -356,20 +358,26 @@ const Users = () => {
                       </div>
                     </td>
                     <td className="p-6">
-                      <select
-                        value={user.role_name || "user"}
-                        onChange={(e) =>
-                          handleRoleChange(user.user_id, e.target.value)
-                        }
-                        className="px-3 py-1 border border-border-default dark:border-gray-700 
+                      {user.role_name === "delivery_person" ? (
+                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm font-medium">
+                          Delivery Person
+                        </span>
+                      ) : (
+                        <select
+                          value={user.role_name || "user"}
+                          onChange={(e) =>
+                            handleRoleChange(user.user_id, e.target.value)
+                          }
+                          className="px-3 py-1 border border-border-default dark:border-gray-700 
                                  rounded-lg bg-transparent text-sm cursor-pointer hover:border-primary transition-colors"
-                      >
-                        {roleOptions.slice(1).map((option) => (
-                          <option key={option.value} value={option.value} className="dark:bg-gray-800">
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                        >
+                          {filteredRoleOptions.slice(1).map((option) => (
+                            <option key={option.value} value={option.value} className="dark:bg-gray-800">
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
                     <td className="p-6">
                       <button

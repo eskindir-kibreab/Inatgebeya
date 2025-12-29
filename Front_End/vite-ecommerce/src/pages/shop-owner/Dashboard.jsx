@@ -188,11 +188,10 @@ const ShopOwnerDashboard = () => {
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <span
-                  className={`text-sm font-medium ${
-                    stat.change.startsWith("+")
+                  className={`text-sm font-medium ${stat.change.startsWith("+")
                       ? "text-green-600"
                       : "text-red-600"
-                  }`}
+                    }`}
                 >
                   {stat.change}
                 </span>
@@ -234,24 +233,27 @@ const ShopOwnerDashboard = () => {
                         {order.items?.length || 0} items
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end gap-1">
                       <p className="font-medium text-price">
-                        ETB {order.total_amount?.toLocaleString()}
+                        ETB {order.total_amount?.toLocaleString() || order.total?.toLocaleString()}
                       </p>
-                      <span
-                        className={`inline-block mt-1 px-2 py-1 text-xs rounded-full capitalize
-                                     ${
-                                       order.status === "delivered"
-                                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                         : order.status === "pending"
-                                         ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                                         : order.status === "cancelled"
-                                         ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                                         : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                                     }`}
-                      >
-                        {order.status}
-                      </span>
+                      <div className="flex gap-1">
+                        <span className={`px-2 py-0.5 text-[10px] rounded-full uppercase font-bold
+                          ${order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                          {order.payment_status || 'Unpaid'}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 text-[10px] rounded-full capitalize font-bold
+                                       ${order.status === "delivered"
+                              ? "bg-green-100 text-green-800"
+                              : order.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
+                        >
+                          {order.status}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

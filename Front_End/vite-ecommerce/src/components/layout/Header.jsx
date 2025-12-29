@@ -24,6 +24,26 @@ const Header = () => {
   const searchRef = useRef(null);
   const deliveriesRef = useRef(null);
 
+  // Sync state with URL parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get("q") || "";
+    const category = params.get("category") || "";
+    const area = params.get("area") || "";
+    const min_price = params.get("min_price") || "";
+    const max_price = params.get("max_price") || "";
+    const sort_by = params.get("sort_by") || "newest";
+
+    setSearchQuery(q);
+    setFilters({
+      category_id: category,
+      area_id: area,
+      min_price,
+      max_price,
+      sort_by,
+    });
+  }, [location.search]);
+
   // Handle click outside for mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -300,6 +320,14 @@ const Header = () => {
                     >
                       <User className="w-4 h-4 mr-2" />
                       Profile
+                    </Link>
+                    <Link
+                      to="/orders"
+                      className="flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      <Package className="w-4 h-4 mr-2" />
+                      My Orders
                     </Link>
                     <button
                       onClick={() => {

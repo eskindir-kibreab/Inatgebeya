@@ -13,6 +13,7 @@ import {
   getDeliveryHistory,
   getDeliveryStats,
   getDeliveryProfile,
+  deleteDeliveryPerson,
 } from "../controllers/delivery.controller.js";
 import {
   authMiddleware,
@@ -127,6 +128,13 @@ router.put(
   [param("id").isInt(), body("status").isIn(["active", "inactive"])],
   requirePermission("super_admin", "admin", "delivery_admin"),
   toggleDeliveryPersonStatus
+);
+
+router.delete(
+  "/delivery-persons/:id",
+  [param("id").isInt()],
+  requirePermission("super_admin", "admin", "delivery_admin"),
+  deleteDeliveryPerson
 );
 
 router.get(

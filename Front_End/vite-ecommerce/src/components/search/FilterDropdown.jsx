@@ -83,17 +83,15 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors
-                   ${
-                     hasActiveFilters()
-                       ? "border-primary bg-primary/10 text-primary"
-                       : "border-border-default dark:border-gray-700 hover:border-primary"
-                   }`}
+                   ${hasActiveFilters()
+            ? "border-primary bg-primary/10 text-primary"
+            : "border-border-default dark:border-gray-700 hover:border-primary"
+          }`}
       >
         <span>Filters</span>
         <ChevronDown
-          className={`w-4 h-4 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""
+            }`}
         />
         {hasActiveFilters() && (
           <span className="w-2 h-2 bg-primary rounded-full"></span>
@@ -149,7 +147,7 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
                 >
                   <option value="">All Categories</option>
                   {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
+                    <option key={category.category_id} value={category.category_id}>
                       {category.category_name}
                     </option>
                   ))}
@@ -175,7 +173,7 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
                 >
                   <option value="">All Areas</option>
                   {areas.map((area) => (
-                    <option key={area.id} value={area.id}>
+                    <option key={area.area_id} value={area.area_id}>
                       {area.area_name}
                     </option>
                   ))}
@@ -246,7 +244,7 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
                     <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded">
                       Category:{" "}
                       {
-                        categories.find((c) => c.id === filters.category_id)
+                        categories.find((c) => c.category_id == filters.category_id)
                           ?.category_name
                       }
                     </span>
@@ -254,7 +252,7 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
                   {filters.area_id && (
                     <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded">
                       Area:{" "}
-                      {areas.find((a) => a.id === filters.area_id)?.area_name}
+                      {areas.find((a) => a.area_id == filters.area_id)?.area_name}
                     </span>
                   )}
                   {filters.min_price && (

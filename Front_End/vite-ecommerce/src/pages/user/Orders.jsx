@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
-import * as ordersAPI from "../../api/orders.api";
+import { ordersAPI } from "../../api/orders.api";
 import { format, parseISO } from "date-fns";
 import {
   Loader2,
@@ -21,6 +21,7 @@ import {
   ShoppingCart,
   CreditCard,
   DollarSign,
+  Smartphone,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../../components/forms/Button";
@@ -62,30 +63,37 @@ const Orders = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [totalPages, setTotalPages] = useState(1); // Added totalPages state
 
   // Fetch orders with error handling and loading states
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      console.log("Fetching orders for user:", user);
       const response = await ordersAPI.getMyOrders({
-        status: statusFilter === "all" ? "" : statusFilter,
-        search: searchQuery,
-        sort: sortBy,
         page: currentPage,
         limit: ITEMS_PER_PAGE,
+        status: statusFilter === "all" ? undefined : statusFilter, // Changed to statusFilter
+        search: searchQuery, // Kept search
+        sort: sortBy, // Kept sort
       });
+      console.log("Orders API response:", response);
 
       if (response.success) {
-        setOrders(response.data.orders || []);
-        setFilteredOrders(response.data.orders || []);
+        // The API returns orders directly in response.data (array)
+        const ordersData = Array.isArray(response.data) ? response.data : (response.data.orders || []);
+        setOrders(ordersData);
+        setFilteredOrders(ordersData);
+        setTotalPages(response.pagination?.totalPages || 1);
       } else {
         throw new Error(response.message || "Failed to load orders");
       }
     } catch (err) {
       console.error("Error fetching orders:", err);
-      setError(err.message || "Failed to load orders. Please try again.");
-      toast.error(err.message || "Failed to load orders");
+      console.error("Error response:", err.response?.data);
+      setError(err.response?.data?.message || "Failed to load orders");
+      toast.error(err.response?.data?.message || "Failed to load orders");
     } finally {
       setLoading(false);
     }
@@ -198,8 +206,7 @@ const Orders = () => {
     );
   }
 
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  // Calculate pagination from filtered orders
   const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
@@ -274,11 +281,10 @@ const Orders = () => {
                       <button
                         key={filter.id}
                         onClick={() => setStatusFilter(filter.id)}
-                        className={`px-3 py-1.5 text-sm rounded-full flex items-center ${
-                          statusFilter === filter.id
-                            ? "bg-primary-100 text-primary-800 border border-primary-300 dark:bg-primary-900/20 dark:text-primary-300"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                        }`}
+                        className={`px-3 py-1.5 text-sm rounded-full flex items-center ${statusFilter === filter.id
+                          ? "bg-primary-100 text-primary-800 border border-primary-300 dark:bg-primary-900/20 dark:text-primary-300"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                          }`}
                       >
                         {filter.label}
                       </button>
@@ -391,6 +397,8 @@ const Orders = () => {
                             <div className="bg-white dark:bg-gray-800 p-1.5 rounded-md border border-gray-200 dark:border-gray-700 mr-3">
                               {order.payment_method === "credit_card" ? (
                                 <CreditCard className="h-5 w-5 text-blue-500" />
+                              ) : order.payment_method === "mobile_banking" ? (
+                                <Smartphone className="h-5 w-5 text-purple-500" />
                               ) : (
                                 <DollarSign className="h-5 w-5 text-green-500" />
                               )}
@@ -399,14 +407,15 @@ const Orders = () => {
                               <p className="font-medium dark:text-white">
                                 {order.payment_method === "credit_card"
                                   ? "Credit/Debit Card"
-                                  : "Cash on Delivery"}
+                                  : order.payment_method === "mobile_banking"
+                                    ? "Mobile Banking"
+                                    : "Cash on Delivery"}
                               </p>
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full ${
-                                  order.payment_status === "paid"
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                    : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                                }`}
+                                className={`text-xs px-2 py-0.5 rounded-full ${order.payment_status === "paid"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                                  }`}
                               >
                                 {order.payment_status?.charAt(0).toUpperCase() +
                                   order.payment_status?.slice(1) || "Pending"}
@@ -658,11 +667,10 @@ const Orders = () => {
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                        currentPage === pageNum
-                          ? "z-10 bg-primary-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-                          : "text-gray-900 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-offset-0"
-                      }`}
+                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${currentPage === pageNum
+                        ? "z-10 bg-primary-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+                        : "text-gray-900 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-offset-0"
+                        }`}
                     >
                       {pageNum}
                     </button>

@@ -113,21 +113,19 @@ const AdminTeam = () => {
 
   const handleDeletePerson = async (personId) => {
     if (
-      !window.confirm("Are you sure you want to delete this delivery person?")
+      !window.confirm("Are you sure you want to delete this delivery person and their user account from the database?")
     )
       return;
 
     try {
-      // Note: In the actual API, you might need to deactivate instead of delete
-      const response = await deliveryAPI.updateDeliveryPersonStatus(personId, {
-        status: "inactive",
-      });
+      const response = await deliveryAPI.deleteDeliveryPerson(personId);
       if (response.success) {
-        toast.success("Delivery person deactivated");
+        toast.success("Delivery person and user deleted successfully");
         fetchDeliveryPersons();
       }
     } catch (error) {
-      toast.error("Failed to deactivate delivery person");
+      console.error("Delete error:", error);
+      toast.error(error.response?.data?.message || "Failed to delete delivery person");
     }
   };
 
@@ -197,128 +195,207 @@ const AdminTeam = () => {
         </div>
       </div>
 
-      {/* Delivery Persons Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
-            </div>
-          ))}
+      {/* Delivery Team Table */}
+      <div
+        className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
+                     dark:border-gray-700 overflow-hidden"
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border-default dark:border-gray-700">
+                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
+                  ID
+                </th>
+                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
+                  Delivery Person
+                </th>
+                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
+                  Contact
+                </th>
+                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
+                  Area
+                </th>
+                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
+                  Status
+                </th>
+                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200 text-center">
+                  Stats
+                </th>
+                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="p-6 text-center">
+                    <div className="animate-pulse space-y-4">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-12 bg-gray-200 dark:bg-gray-700 rounded"
+                        ></div>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ) : deliveryPersons.length > 0 ? (
+                deliveryPersons.map((person) => (
+                  <tr
+                    key={person.delivery_person_id}
+                    className="border-b border-border-default 
+                                             dark:border-gray-700 hover:bg-bg-light 
+                                             dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <td className="p-6 font-mono text-xs text-text-secondary">
+                      #{person.delivery_person_id}
+                    </td>
+                    <td className="p-6">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 bg-primary/10 rounded-full 
+                                       flex items-center justify-center"
+                        >
+                          <span className="font-medium text-primary">
+                            {person.full_name?.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-text-main dark:text-gray-200">
+                            {person.full_name}
+                          </p>
+                          <p className="text-xs text-text-secondary dark:text-gray-400">
+                            User ID: #{person.user_id}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-6">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm text-text-secondary dark:text-gray-400">
+                          <Phone className="w-3.5 h-3.5" />
+                          {person.phone}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-text-secondary dark:text-gray-400">
+                          <Mail className="w-3.5 h-3.5" />
+                          {person.email}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-6">
+                      <select
+                        value={person.area_id}
+                        onChange={async (e) => {
+                          const newAreaId = e.target.value;
+                          try {
+                            const response = await deliveryAPI.updateDeliveryPerson(
+                              person.delivery_person_id,
+                              { area_id: newAreaId }
+                            );
+                            if (response.success) {
+                              toast.success("Area updated");
+                              fetchDeliveryPersons();
+                            }
+                          } catch (error) {
+                            toast.error("Failed to update area");
+                          }
+                        }}
+                        className="px-3 py-1 border border-border-default dark:border-gray-700 
+                                 rounded-lg bg-transparent text-sm cursor-pointer hover:border-primary transition-colors"
+                      >
+                        {areaOptions.slice(1).map((option) => (
+                          <option
+                            key={option.value}
+                            value={option.value}
+                            className="dark:bg-gray-800"
+                          >
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="p-6">
+                      <button
+                        onClick={() =>
+                          handleToggleStatus(
+                            person.delivery_person_id,
+                            person.status
+                          )
+                        }
+                        className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider
+                                     ${person.status === "active"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                          }`}
+                      >
+                        {person.status}
+                      </button>
+                    </td>
+                    <td className="p-6">
+                      <div className="flex items-center justify-center gap-6">
+                        <div className="text-center">
+                          <p className="text-sm font-bold text-primary">
+                            {person.total_deliveries || 0}
+                          </p>
+                          <p className="text-[10px] uppercase text-text-secondary">
+                            Total
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-bold text-accent">
+                            {person.completed_deliveries || 0}
+                          </p>
+                          <p className="text-[10px] uppercase text-text-secondary">
+                            Done
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-6 text-right">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedPerson(person);
+                            setFormData({
+                              name: person.full_name,
+                              email: person.email,
+                              phone: person.phone,
+                              area_id: person.area_id,
+                              password: "",
+                            });
+                            setShowEditModal(true);
+                          }}
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4 text-text-secondary" />
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleDeletePerson(person.delivery_person_id)
+                          }
+                          className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="p-12 text-center text-text-secondary">
+                    No delivery persons found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {deliveryPersons.map((person) => (
-            <div
-              key={person.id}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
-                       dark:border-gray-700 p-6"
-            >
-              {/* Person Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Users className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-text-main dark:text-gray-200">
-                      {person.name}
-                    </h3>
-                    <p className="text-sm text-text-secondary dark:text-gray-400">
-                      ID: #{person.id}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleToggleStatus(person.id, person.status)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium
-                            ${person.status === "active"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                      : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                    }`}
-                >
-                  {person.status}
-                </button>
-              </div>
-
-              {/* Person Details */}
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-text-secondary" />
-                  <span className="text-text-secondary dark:text-gray-400">
-                    {person.phone}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-text-secondary" />
-                  <span className="text-text-secondary dark:text-gray-400">
-                    {person.email}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <MapPin className="w-4 h-4 text-text-secondary" />
-                  <span className="text-text-secondary dark:text-gray-400">
-                    {person.area_name}
-                  </span>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {person.total_deliveries || 0}
-                  </div>
-                  <div className="text-sm text-text-secondary dark:text-gray-400">
-                    Total Deliveries
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-accent">
-                    {person.deliveries_today || 0}
-                  </div>
-                  <div className="text-sm text-text-secondary dark:text-gray-400">
-                    Today
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setSelectedPerson(person);
-                    setFormData({
-                      name: person.name,
-                      email: person.email,
-                      phone: person.phone,
-                      area_id: person.area_id,
-                      password: "",
-                    });
-                    setShowEditModal(true);
-                  }}
-                  className="flex-1 py-2 border border-border-default 
-                           dark:border-gray-700 rounded-lg hover:bg-gray-50 
-                           dark:hover:bg-gray-700 flex items-center justify-center gap-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeletePerson(person.id)}
-                  className="p-2 border border-red-200 dark:border-red-800 
-                           text-red-600 rounded-lg hover:bg-red-50 
-                           dark:hover:bg-red-900/20"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
 
       {/* Add Person Modal */}
       {showAddModal && (

@@ -161,38 +161,62 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// Delete user (soft delete)
+// Delete user (hard delete)
 export const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  const connection = await pool.getConnection();
+
   try {
-    const { id } = req.params;
+    await connection.beginTransaction();
 
     // Cannot delete self
     if (parseInt(id) === req.user.user_id) {
+      await connection.rollback();
       return res.status(400).json({
         success: false,
         message: "Cannot delete your own account",
       });
     }
 
-    const affectedRows = await UserService.deleteUser(id);
+    // 1. Delete associated profiles
+    await connection.query("DELETE FROM UserCoins WHERE user_id = ?", [id]);
+    await connection.query("DELETE FROM DeliveryPersons WHERE user_id = ?", [id]);
+    await connection.query("DELETE FROM Shops WHERE owner_id = ?", [id]);
 
-    if (affectedRows === 0) {
+    // 2. Delete the user record
+    const [result] = await connection.query("DELETE FROM Users WHERE user_id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      await connection.rollback();
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
+    await connection.commit();
+
     res.json({
       success: true,
-      message: "User deleted successfully",
+      message: "User and all associated data deleted successfully",
     });
   } catch (error) {
+    await connection.rollback();
     console.error("Delete user error:", error);
+
+    if (error.code === "ER_ROW_IS_REFERENCED_2") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete user. They have active records (like orders) in the system.",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to delete user",
     });
+  } finally {
+    connection.release();
   }
 };
 

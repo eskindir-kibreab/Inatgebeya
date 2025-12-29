@@ -161,31 +161,76 @@ export const updateDeliveryPerson = async (req, res) => {
   }
 
   const { id } = req.params;
-  const updates = req.body;
+  const { name, email, phone, area_id } = req.body;
+
+  const connection = await pool.getConnection();
 
   try {
-    const affectedRows = await DeliveryService.updateDeliveryPerson(
-      id,
-      updates
+    await connection.beginTransaction();
+
+    // Get delivery person to find their user_id
+    const [dp] = await connection.query(
+      "SELECT user_id FROM DeliveryPersons WHERE delivery_person_id = ?",
+      [id]
     );
 
-    if (affectedRows === 0) {
+    if (dp.length === 0) {
+      await connection.rollback();
       return res.status(404).json({
         success: false,
-        message: "Delivery person not found or no changes made",
+        message: "Delivery person not found",
       });
     }
+
+    const userId = dp[0].user_id;
+
+    // Update User details if provided
+    const userUpdates = [];
+    const userParams = [];
+    if (name) {
+      userUpdates.push("full_name = ?");
+      userParams.push(name);
+    }
+    if (email) {
+      userUpdates.push("email = ?");
+      userParams.push(email);
+    }
+    if (phone) {
+      userUpdates.push("phone = ?");
+      userParams.push(phone);
+    }
+
+    if (userUpdates.length > 0) {
+      userParams.push(userId);
+      await connection.query(
+        `UPDATE Users SET ${userUpdates.join(", ")} WHERE user_id = ?`,
+        userParams
+      );
+    }
+
+    // Update DeliveryPerson details (area_id) if provided
+    if (area_id) {
+      await connection.query(
+        "UPDATE DeliveryPersons SET area_id = ? WHERE delivery_person_id = ?",
+        [area_id, id]
+      );
+    }
+
+    await connection.commit();
 
     res.json({
       success: true,
       message: "Delivery person updated successfully",
     });
   } catch (error) {
+    await connection.rollback();
     console.error("Update delivery person error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update delivery person",
     });
+  } finally {
+    connection.release();
   }
 };
 
@@ -486,5 +531,67 @@ export const getDeliveryProfile = async (req, res) => {
       success: false,
       message: "Failed to fetch delivery profile",
     });
+  }
+};
+
+// Delete delivery person and associated user
+export const deleteDeliveryPerson = async (req, res) => {
+  const { id } = req.params;
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // 1. Get user_id associated with this delivery person
+    const [dp] = await connection.query(
+      "SELECT user_id FROM DeliveryPersons WHERE delivery_person_id = ?",
+      [id]
+    );
+
+    if (dp.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Delivery person not found",
+      });
+    }
+
+    const userId = dp[0].user_id;
+
+    // 2. Delete delivery person record
+    await connection.query(
+      "DELETE FROM DeliveryPersons WHERE delivery_person_id = ?",
+      [id]
+    );
+
+    // 3. Delete user record
+    // Note: This might fail if there are other FK constraints (e.g. orders)
+    // but the user requested deletion "from the database".
+    await connection.query("DELETE FROM Users WHERE user_id = ?", [userId]);
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: "Delivery person and user deleted successfully",
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error("Delete delivery person error:", error);
+
+    // Handle standard FK constraint error
+    if (error.code === "ER_ROW_IS_REFERENCED_2") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete user. They have associated records (like orders) in the system.",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete delivery person",
+    });
+  } finally {
+    connection.release();
   }
 };

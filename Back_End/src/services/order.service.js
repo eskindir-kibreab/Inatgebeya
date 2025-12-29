@@ -124,7 +124,7 @@ export class OrderService {
 
   // Create order
   static async createOrder(orderData) {
-    const { user_id, shop_id, delivery_address, items } = orderData;
+    const { user_id, shop_id, delivery_address, items, payment_method } = orderData;
 
     // Start transaction
     const connection = await pool.getConnection();
@@ -138,10 +138,13 @@ export class OrderService {
       }
 
       // Create order
+      const initialStatus = payment_method === "mobile_banking" ? "approved" : "pending";
+      const paymentStatus = payment_method === "mobile_banking" ? "paid" : "pending";
+
       const [orderResult] = await connection.query(
-        `INSERT INTO Orders (user_id, shop_id, delivery_address, total, status) 
-         VALUES (?, ?, ?, ?, 'pending')`,
-        [user_id, shop_id, delivery_address, total]
+        `INSERT INTO Orders (user_id, shop_id, delivery_address, total, status, payment_method, payment_status) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [user_id, shop_id, delivery_address, total, initialStatus, payment_method || 'cash_on_delivery', paymentStatus]
       );
 
       const orderId = orderResult.insertId;

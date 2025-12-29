@@ -86,7 +86,8 @@ const ProductDetail = () => {
       return;
     }
 
-    addToCart(product, quantity, selectedSize || null);
+    const sizeObj = sizes.find((s) => s.size_label === selectedSize);
+    addToCart(product, quantity, selectedSize || null, sizeObj?.id || null);
     toast.success("Added to cart!");
   };
 
@@ -171,11 +172,10 @@ const ProductDetail = () => {
                   key={index}
                   onClick={() => setActiveImage(index)}
                   className={`flex-shrink-0 w-20 h-20 border-2 rounded-lg overflow-hidden
-                            ${
-                              activeImage === index
-                                ? "border-primary"
-                                : "border-border-default dark:border-gray-700"
-                            }`}
+                            ${activeImage === index
+                      ? "border-primary"
+                      : "border-border-default dark:border-gray-700"
+                    }`}
                 >
                   <img
                     src={img}
@@ -283,11 +283,10 @@ const ProductDetail = () => {
                     key={size.id}
                     onClick={() => setSelectedSize(size.size_label)}
                     className={`px-4 py-2 border rounded-lg transition-colors
-                              ${
-                                selectedSize === size.size_label
-                                  ? "border-primary bg-primary/10 text-primary"
-                                  : "border-border-default dark:border-gray-700 hover:border-primary"
-                              }`}
+                              ${selectedSize === size.size_label
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border-default dark:border-gray-700 hover:border-primary"
+                      }`}
                   >
                     {size.size_label}
                     {size.stock !== undefined && (
