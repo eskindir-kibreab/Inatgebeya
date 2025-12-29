@@ -116,14 +116,18 @@ export const createProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log("Product Update Validation Errors:", errors.array());
     return res.status(400).json({
       success: false,
+      message: "Validation failed",
       errors: errors.array(),
     });
   }
 
   const { id } = req.params;
-  const updates = req.body;
+  const updates = { ...req.body };
+
+  console.log("Updating product ID:", id, "with data:", updates);
 
   try {
     // Check if product belongs to user's shop (for shop owners)

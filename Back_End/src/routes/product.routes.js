@@ -144,8 +144,11 @@ router.put(
     body("category_id").optional().isInt(),
     body("price").optional().isFloat({ min: 0 }),
     body("description").optional().isString(),
+    body("is_active").optional().toBoolean().isBoolean(),
   ],
   requireRole("super_admin", "admin", "item_adder_admin"),
+  uploadSingle("main_image"),
+  handleUploadError,
   updateProduct
 );
 

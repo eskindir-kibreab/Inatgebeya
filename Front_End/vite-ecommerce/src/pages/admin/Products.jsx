@@ -322,9 +322,6 @@ const Products = () => {
                   Price
                 </th>
                 <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
-                  Stock
-                </th>
-                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
                   Status
                 </th>
                 <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
@@ -382,17 +379,6 @@ const Products = () => {
                       {formatCurrency(product.price)}
                     </td>
                     <td className="p-6">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm
-                                     ${(product.stock || 0) > 10
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/20"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/20"
-                          }`}
-                      >
-                        {product.stock || 0} in stock
-                      </span>
-                    </td>
-                    <td className="p-6">
                       <button
                         onClick={() =>
                           handleToggleStatus(product.id, product.is_active)
@@ -416,19 +402,10 @@ const Products = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() =>
-                            (window.location.href = `/products/${product.id}`)
+                            (window.location.href = `/admin/products/${product.id}`)
                           }
                           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                          title="View"
-                        >
-                          <Eye className="w-4 h-4 text-text-secondary" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            (window.location.href = `/admin/products/edit/${product.id}`)
-                          }
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                          title="Edit"
+                          title="View/Edit"
                         >
                           <Edit className="w-4 h-4 text-text-secondary" />
                         </button>

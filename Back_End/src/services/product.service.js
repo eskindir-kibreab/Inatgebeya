@@ -197,8 +197,18 @@ export class ProductService {
     const fields = [];
     const values = [];
 
+    const allowedFields = [
+      "product_name",
+      "category_id",
+      "shop_id",
+      "price",
+      "description",
+      "main_image",
+      "is_active",
+    ];
+
     Object.keys(updates).forEach((key) => {
-      if (updates[key] !== undefined) {
+      if (allowedFields.includes(key) && updates[key] !== undefined) {
         fields.push(`${key} = ?`);
         values.push(updates[key]);
       }
