@@ -37,6 +37,7 @@ const statusFilters = [
   { id: "processing", label: "Processing" },
   { id: "shipped", label: "Shipped" },
   { id: "delivered", label: "Delivered" },
+  { id: "completed", label: "Completed" },
   { id: "cancelled", label: "Cancelled" },
 ];
 
@@ -172,6 +173,27 @@ const Orders = () => {
       toast.error("Failed to cancel order. Please try again.");
     } finally {
       setCancelling(null);
+    }
+  };
+
+  const handleConfirmReceipt = async (orderId) => {
+    if (!window.confirm("Confirm that you have received this order?")) return;
+
+    try {
+      setLoading(true);
+      const response = await ordersAPI.updateStatus(orderId, { status: "completed" });
+
+      if (response.success) {
+        toast.success("Order confirmed as received");
+        fetchOrders();
+      } else {
+        toast.error(response.message || "Failed to confirm receipt");
+      }
+    } catch (error) {
+      console.error("Error confirming receipt:", error);
+      toast.error("Failed to confirm receipt. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -568,6 +590,18 @@ const Orders = () => {
                             Track Order
                           </Button>
                         </Link>
+                      )}
+
+                      {order.status?.toLowerCase() === "delivered" && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                          onClick={() => handleConfirmReceipt(order.order_id)}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1.5" />
+                          Confirm Receipt
+                        </Button>
                       )}
                     </div>
                   </div>

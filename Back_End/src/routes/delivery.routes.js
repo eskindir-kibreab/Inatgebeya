@@ -144,13 +144,13 @@ router.get(
     query("limit").optional().isInt({ min: 1, max: 100 }),
     query("area_id").optional().isInt(),
   ],
-  requirePermission("super_admin", "admin", "delivery_admin"),
+  requireRole("super_admin", "admin", "delivery_admin", "delivery_person"),
   getPendingDeliveries
 );
 
 router.post(
   "/assign",
-  requirePermission("super_admin", "admin", "delivery_admin"),
+  requireRole("super_admin", "admin", "delivery_admin", "delivery_person"),
   assignDeliveryValidation,
   assignDelivery
 );

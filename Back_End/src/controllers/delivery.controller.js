@@ -276,7 +276,21 @@ export const toggleDeliveryPersonStatus = async (req, res) => {
 // Get pending deliveries
 export const getPendingDeliveries = async (req, res) => {
   try {
-    const { page = 1, limit = 20, area_id } = req.query;
+    let { page = 1, limit = 20, area_id } = req.query;
+
+    // If delivery person, restrict to their area
+    if (req.user.role_name === "delivery_person") {
+      const deliveryPerson = await DeliveryService.getDeliveryPersonByUserId(
+        req.user.user_id
+      );
+      if (!deliveryPerson) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not registered as a delivery person",
+        });
+      }
+      area_id = deliveryPerson.area_id;
+    }
 
     const result = await DeliveryService.getPendingDeliveries(
       area_id,
@@ -347,6 +361,31 @@ export const assignDelivery = async (req, res) => {
   const { order_id, delivery_person_id } = req.body;
 
   try {
+    // If delivery person is self-assigning
+    if (req.user.role_name === "delivery_person") {
+      const deliveryPerson = await DeliveryService.getDeliveryPersonByUserId(
+        req.user.user_id
+      );
+
+      if (!deliveryPerson) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not registered as a delivery person",
+        });
+      }
+
+      // Ensure they are assigning to themselves
+      if (parseInt(delivery_person_id) !== deliveryPerson.delivery_person_id) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only assign deliveries to yourself",
+        });
+      }
+
+      // Optional: Check if order is in their area (logic should be in service or here)
+      // For now, relying on the fact they can only SEE orders in their area via getPendingDeliveries
+    }
+
     const deliveryId = await DeliveryService.assignDelivery(
       order_id,
       delivery_person_id

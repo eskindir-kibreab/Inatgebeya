@@ -97,7 +97,7 @@ const AdminTeam = () => {
 
     try {
       const response = await deliveryAPI.updateDeliveryPerson(
-        selectedPerson.id,
+        selectedPerson.delivery_person_id,
         formData
       );
       if (response.success) {

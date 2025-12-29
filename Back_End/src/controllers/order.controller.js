@@ -166,6 +166,7 @@ export const updateOrderStatus = async (req, res) => {
       "approved",
       "delivering",
       "delivered",
+      "completed",
       "cancelled",
     ];
     if (!validStatuses.includes(status)) {
@@ -175,13 +176,40 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Check permissions for shop owner
+    // Check permissions
+    // Shop owner checks
     if (req.user.role_name === "shop_owner") {
       const order = await OrderService.getOrderById(id);
       if (!order || order.shop_id !== req.user.shop_id) {
         return res.status(403).json({
           success: false,
           message: "You can only update orders from your shop",
+        });
+      }
+    }
+
+    // User checks (for completing order)
+    if (req.user.role_name === "user") {
+      const order = await OrderService.getOrderById(id);
+
+      if (!order || order.user_id !== req.user.user_id) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only update your own orders",
+        });
+      }
+
+      if (status !== "completed") {
+        return res.status(403).json({
+          success: false,
+          message: "You can only mark orders as completed (confirm receipt)",
+        });
+      }
+
+      if (order.status !== "delivered") {
+        return res.status(400).json({
+          success: false,
+          message: "You can only confirm receipt for delivered orders",
         });
       }
     }

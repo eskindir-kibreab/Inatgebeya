@@ -34,8 +34,11 @@ export const deliveryAPI = {
   // Delivery admin: Get pending deliveries
   getPending: (params) => api.get("/delivery/pending", { params }),
 
-  // Delivery admin: Assign delivery
+  // Delivery admin/person: Assign delivery
   assign: (data) => api.post("/delivery/assign", data),
+
+  // Delivery person: Accept delivery (alias for assign)
+  acceptDelivery: (data) => api.post("/delivery/assign", data),
 
   // Delivery admin: Get delivery stats
   getStats: (params) => api.get("/delivery/stats", { params }),

@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 const DeliveryPersonDashboard = () => {
   const [profile, setProfile] = useState(null);
   const [assignedDeliveries, setAssignedDeliveries] = useState([]);
+  const [availableDeliveries, setAvailableDeliveries] = useState([]);
   const [completedDeliveries, setCompletedDeliveries] = useState([]);
   const [stats, setStats] = useState({
     totalToday: 0,
@@ -37,6 +38,12 @@ const DeliveryPersonDashboard = () => {
       const profileRes = await deliveryAPI.getProfile();
       if (profileRes.success) {
         setProfile(profileRes.data);
+      }
+
+      // Fetch available deliveries (pending in area)
+      const pendingRes = await deliveryAPI.getPending();
+      if (pendingRes.success) {
+        setAvailableDeliveries(pendingRes.data);
       }
 
       // Fetch assigned deliveries
@@ -91,6 +98,31 @@ const DeliveryPersonDashboard = () => {
       toast.error("Failed to update status");
     } finally {
       setUpdatingStatus((prev) => ({ ...prev, [deliveryId]: false }));
+    }
+  };
+
+  const handleAcceptDelivery = async (orderId) => {
+    setUpdatingStatus((prev) => ({ ...prev, [orderId]: true }));
+
+    try {
+      if (!profile?.delivery_person_id) {
+        toast.error("Profile not loaded");
+        return;
+      }
+
+      const response = await deliveryAPI.acceptDelivery({
+        order_id: orderId,
+        delivery_person_id: profile.delivery_person_id
+      });
+
+      if (response.success) {
+        toast.success("Delivery accepted successfully");
+        fetchDeliveries();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to accept delivery");
+    } finally {
+      setUpdatingStatus((prev) => ({ ...prev, [orderId]: false }));
     }
   };
 
@@ -215,6 +247,64 @@ const DeliveryPersonDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        {/* Available for Pickup */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-border-default dark:border-gray-700 lg:col-span-2">
+          <div className="p-6 border-b border-border-default dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-text-main dark:text-gray-200">
+                Available in Your Area
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 rounded-full text-xs font-medium">
+                  {availableDeliveries.length} available
+                </span>
+                <Truck className="w-5 h-5 text-primary" />
+              </div>
+            </div>
+          </div>
+
+          <div className="divide-y divide-border-default dark:divide-gray-700 max-h-[400px] overflow-y-auto">
+            {availableDeliveries.length > 0 ? (
+              availableDeliveries.map((delivery) => (
+                <div key={delivery.order_id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-text-main dark:text-gray-200">Order #{delivery.order_id}</span>
+                        <span className="text-sm text-text-secondary dark:text-gray-400">{formatDate(delivery.created_at)}</span>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3 text-sm">
+                        <div className="flex items-center gap-2 text-text-secondary dark:text-gray-400">
+                          <User className="w-4 h-4" />
+                          {delivery.customer_name}
+                        </div>
+                        <div className="flex items-center gap-2 text-text-secondary dark:text-gray-400">
+                          <MapPin className="w-4 h-4" />
+                          {delivery.delivery_address}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => handleAcceptDelivery(delivery.order_id)}
+                      loading={updatingStatus[delivery.order_id]}
+                      size="sm"
+                    >
+                      Accept Delivery
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-12 text-center text-text-secondary dark:text-gray-400">
+                No new deliveries available in your area right now.
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Assigned Deliveries */}
         <div
           className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
@@ -235,7 +325,7 @@ const DeliveryPersonDashboard = () => {
                 const nextAction = getNextAction(delivery.status);
 
                 return (
-                  <div key={delivery.id} className="p-6">
+                  <div key={delivery.delivery_id} className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="font-medium text-text-main dark:text-gray-200">
@@ -273,9 +363,9 @@ const DeliveryPersonDashboard = () => {
                       {nextAction && (
                         <Button
                           onClick={() =>
-                            handleUpdateStatus(delivery.id, nextAction.action)
+                            handleUpdateStatus(delivery.delivery_id, nextAction.action)
                           }
-                          loading={updatingStatus[delivery.id]}
+                          loading={updatingStatus[delivery.delivery_id]}
                           className="flex-1"
                         >
                           {nextAction.label}
@@ -285,10 +375,10 @@ const DeliveryPersonDashboard = () => {
                       {delivery.status === "picked" && (
                         <Button
                           onClick={() =>
-                            handleUpdateStatus(delivery.id, "returned")
+                            handleUpdateStatus(delivery.delivery_id, "returned")
                           }
                           variant="danger"
-                          loading={updatingStatus[delivery.id]}
+                          loading={updatingStatus[delivery.delivery_id]}
                         >
                           <XCircle className="w-4 h-4" />
                         </Button>
@@ -328,7 +418,7 @@ const DeliveryPersonDashboard = () => {
           <div className="divide-y divide-border-default dark:divide-gray-700">
             {completedDeliveries.length > 0 ? (
               completedDeliveries.map((delivery) => (
-                <div key={delivery.id} className="p-6">
+                <div key={delivery.delivery_id} className="p-6">
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="font-medium text-text-main dark:text-gray-200">

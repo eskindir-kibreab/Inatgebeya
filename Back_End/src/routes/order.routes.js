@@ -95,7 +95,7 @@ router.put(
       "cancelled",
     ]),
   ],
-  requireRole("super_admin", "admin", "shop_owner"),
+  requireRole("super_admin", "admin", "shop_owner", "user"),
   updateOrderStatus
 );
 
