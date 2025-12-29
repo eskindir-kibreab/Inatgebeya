@@ -101,7 +101,11 @@ export class DeliveryService {
   // Get delivery person by user ID
   static async getDeliveryPersonByUserId(userId) {
     const [deliveryPersons] = await pool.query(
-      "SELECT * FROM DeliveryPersons WHERE user_id = ?",
+      `SELECT dp.*, u.full_name, u.email, u.phone, a.area_name
+       FROM DeliveryPersons dp
+       JOIN Users u ON dp.user_id = u.user_id
+       JOIN Areas a ON dp.area_id = a.area_id
+       WHERE dp.user_id = ?`,
       [userId]
     );
 

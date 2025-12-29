@@ -13,6 +13,7 @@ import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
 
 const DeliveryPersonDashboard = () => {
+  const [profile, setProfile] = useState(null);
   const [assignedDeliveries, setAssignedDeliveries] = useState([]);
   const [completedDeliveries, setCompletedDeliveries] = useState([]);
   const [stats, setStats] = useState({
@@ -31,6 +32,12 @@ const DeliveryPersonDashboard = () => {
   const fetchDeliveries = async () => {
     try {
       setLoading(true);
+
+      // Fetch profile
+      const profileRes = await deliveryAPI.getProfile();
+      if (profileRes.success) {
+        setProfile(profileRes.data);
+      }
 
       // Fetch assigned deliveries
       const assignedRes = await deliveryAPI.getAssigned();
@@ -175,7 +182,7 @@ const DeliveryPersonDashboard = () => {
           </h1>
         </div>
         <p className="text-text-secondary dark:text-gray-400">
-          Manage your deliveries and track your progress
+          Manage your deliveries and track your progress • Assigned to: <span className="font-semibold text-primary">{profile?.area_name || "Loading..."}</span>
         </p>
       </div>
 

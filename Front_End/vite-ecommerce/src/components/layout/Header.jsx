@@ -202,14 +202,6 @@ const Header = () => {
                           Manage Team
                         </Link>
                         <Link
-                          to="/admin/assign"
-                          className="group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
-                          onClick={() => setIsDeliveriesOpen(false)}
-                        >
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          Assign Deliveries
-                        </Link>
-                        <Link
                           to="/admin/deliveries"
                           className="group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
                           onClick={() => setIsDeliveriesOpen(false)}

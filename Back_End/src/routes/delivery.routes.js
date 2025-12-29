@@ -12,6 +12,7 @@ import {
   updateDeliveryStatus,
   getDeliveryHistory,
   getDeliveryStats,
+  getDeliveryProfile,
 } from "../controllers/delivery.controller.js";
 import {
   authMiddleware,
@@ -23,8 +24,23 @@ const router = express.Router();
 
 // Validation rules
 const deliveryPersonValidation = [
-  body("user_id").isInt().withMessage("Valid user ID is required"),
+  body("user_id")
+    .optional()
+    .isInt()
+    .withMessage("Valid user ID is required if provided"),
   body("area_id").isInt().withMessage("Valid area ID is required"),
+  body("name")
+    .if(body("user_id").not().exists())
+    .notEmpty()
+    .withMessage("Name is required for new delivery person"),
+  body("email")
+    .if(body("user_id").not().exists())
+    .isEmail()
+    .withMessage("Valid email is required for new delivery person"),
+  body("password")
+    .if(body("user_id").not().exists())
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
 ];
 
 const assignDeliveryValidation = [
@@ -38,6 +54,8 @@ const assignDeliveryValidation = [
 router.use(authMiddleware);
 
 // Delivery person routes
+router.get("/profile", getDeliveryProfile);
+
 router.get(
   "/assigned",
   [
