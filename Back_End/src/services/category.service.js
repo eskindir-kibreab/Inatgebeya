@@ -109,16 +109,26 @@ export class CategoryService {
     return categories[0];
   }
 
-  // Get all categories with product counts
-  static async getAllCategoriesWithStats() {
-    const [categories] = await pool.query(
-      `SELECT pc.*, COUNT(p.product_id) as product_count
-       FROM ProductCategories pc
-       LEFT JOIN Products p ON pc.category_id = p.category_id AND p.is_active = TRUE
-       GROUP BY pc.category_id
-       ORDER BY pc.category_name`
-    );
+  // Get all categories with product counts (supports shop filtering)
+  static async getAllCategoriesWithStats(shopId = null) {
+    let query = `
+      SELECT pc.*, COUNT(p.product_id) as product_count
+      FROM ProductCategories pc
+      LEFT JOIN Products p ON pc.category_id = p.category_id AND p.is_active = TRUE
+    `;
+    const params = [];
 
+    if (shopId) {
+      query += ` AND p.shop_id = ? `;
+      params.push(shopId);
+    }
+
+    query += `
+      GROUP BY pc.category_id
+      ORDER BY pc.category_name
+    `;
+
+    const [categories] = await pool.query(query, params);
     return categories;
   }
 }

@@ -67,11 +67,19 @@ const AdminProductDetail = () => {
             }
 
             if (categoriesRes.success) {
-                setCategories(categoriesRes.data);
+                const normalized = categoriesRes.data.map(cat => ({
+                    ...cat,
+                    id: cat.category_id || cat.id
+                }));
+                setCategories(normalized);
             }
 
             if (shopsRes.success) {
-                setShops(shopsRes.data);
+                const normalized = shopsRes.data.map(shop => ({
+                    ...shop,
+                    id: shop.shop_id || shop.id
+                }));
+                setShops(normalized);
             }
         } catch (error) {
             console.error("Error fetching data:", error);

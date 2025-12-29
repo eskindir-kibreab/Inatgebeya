@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, Package, Search } from "lucide-react";
 import { categoriesAPI } from "../../api/categories.api";
+import { shopsAPI } from "../../api/shops.api";
+import { useAuth } from "../../context/AuthContext";
 import Input from "../../components/forms/Input";
 import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
 
 const Categories = () => {
+  const { user, role } = useAuth();
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,13 +16,19 @@ const Categories = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [myShop, setMyShop] = useState(null);
+  const [showOnlyMine, setShowOnlyMine] = useState(role === "shop_owner");
   const [formData, setFormData] = useState({
     category_name: "",
   });
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (role === "shop_owner") {
+      fetchMyShop();
+    } else {
+      fetchCategories();
+    }
+  }, [role]);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -32,15 +41,40 @@ const Categories = () => {
     }
   }, [searchQuery, categories]);
 
-  const fetchCategories = async () => {
+  const fetchMyShop = async () => {
     try {
-      setLoading(true);
-      const response = await categoriesAPI.getAll({ stats: true });
+      const response = await shopsAPI.getMyShop();
       if (response.success) {
-        setCategories(response.data);
-        setFilteredCategories(response.data);
+        setMyShop(response.data);
+        fetchCategories(response.data.shop_id);
       }
     } catch (error) {
+      console.error("Error fetching my shop:", error);
+      fetchCategories();
+    }
+  };
+
+  const fetchCategories = async (shopId = null) => {
+    try {
+      setLoading(true);
+      const params = { stats: true };
+      if (shopId) params.shop_id = shopId;
+
+      const response = await categoriesAPI.getAll(params);
+      if (response.success) {
+        let data = response.data.map(cat => ({
+          ...cat,
+          id: cat.category_id || cat.id
+        }));
+        // If shopId is provided, filter out categories with no products for this shop
+        if (shopId) {
+          data = data.filter((cat) => parseInt(cat.product_count) > 0);
+        }
+        setCategories(data);
+        setFilteredCategories(data);
+      }
+    } catch (error) {
+      console.error("Fetch categories error:", error);
       toast.error("Failed to load categories");
     } finally {
       setLoading(false);
@@ -54,7 +88,7 @@ const Categories = () => {
       if (response.success) {
         toast.success("Category created successfully");
         setShowCreateModal(false);
-        fetchCategories();
+        fetchCategories(myShop?.shop_id);
         resetForm();
       }
     } catch (error) {
@@ -74,7 +108,7 @@ const Categories = () => {
       if (response.success) {
         toast.success("Category updated successfully");
         setShowEditModal(false);
-        fetchCategories();
+        fetchCategories(myShop?.shop_id);
         resetForm();
       }
     } catch (error) {
@@ -90,7 +124,7 @@ const Categories = () => {
       const response = await categoriesAPI.delete(categoryId);
       if (response.success) {
         toast.success("Category deleted successfully");
-        fetchCategories();
+        fetchCategories(myShop?.shop_id);
       }
     } catch (error) {
       toast.error("Failed to delete category");
@@ -203,7 +237,7 @@ const Categories = () => {
               <div className="mt-6">
                 <button
                   onClick={() =>
-                    (window.location.href = `/search?category=${category.id}`)
+                    (window.location.href = `/admin/products?category_id=${category.id}`)
                   }
                   className="w-full py-2 border border-primary text-primary 
                            hover:bg-primary/10 rounded-lg font-medium"

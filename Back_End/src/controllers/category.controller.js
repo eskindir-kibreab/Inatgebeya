@@ -5,10 +5,11 @@ import { CategoryService } from "../services/category.service.js";
 export const getAllCategories = async (req, res) => {
   try {
     const withStats = req.query.stats === "true";
+    const shopId = req.query.shop_id;
 
     let categories;
     if (withStats) {
-      categories = await CategoryService.getAllCategoriesWithStats();
+      categories = await CategoryService.getAllCategoriesWithStats(shopId);
     } else {
       categories = await CategoryService.getAllCategories();
     }

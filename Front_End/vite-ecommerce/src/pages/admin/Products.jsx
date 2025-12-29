@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Search,
   Edit,
@@ -19,12 +20,15 @@ import AdminActiveFilters from "../../components/search/AdminActiveFilters";
 import toast from "react-hot-toast";
 
 const Products = () => {
+  const [searchParams] = useSearchParams();
+  const initialCategoryId = searchParams.get("category_id") || "";
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
-    category_id: "",
+    category_id: initialCategoryId,
     is_active: "",
     include_inactive: true,
     page: 1,
@@ -102,7 +106,11 @@ const Products = () => {
     try {
       const response = await categoriesAPI.getAll();
       if (response.success) {
-        setCategories(response.data);
+        const normalized = response.data.map(cat => ({
+          ...cat,
+          id: cat.category_id || cat.id
+        }));
+        setCategories(normalized);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -113,7 +121,11 @@ const Products = () => {
     try {
       const response = await shopsAPI.getAll();
       if (response.success) {
-        setShops(response.data);
+        const normalized = response.data.map(shop => ({
+          ...shop,
+          id: shop.shop_id || shop.id
+        }));
+        setShops(normalized);
       }
     } catch (error) {
       console.error("Error fetching shops:", error);
@@ -541,7 +553,7 @@ const Products = () => {
                     options={[
                       { value: "", label: "Select Category" },
                       ...categories.map((cat) => ({
-                        value: cat.category_id,
+                        value: cat.id,
                         label: cat.category_name,
                       })),
                     ]}
@@ -560,7 +572,7 @@ const Products = () => {
                     options={[
                       { value: "", label: "Select Shop" },
                       ...shops.map((shop) => ({
-                        value: shop.shop_id,
+                        value: shop.id,
                         label: shop.shop_name,
                       })),
                     ]}
