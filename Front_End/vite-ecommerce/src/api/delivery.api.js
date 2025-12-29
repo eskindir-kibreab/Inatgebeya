@@ -39,4 +39,7 @@ export const deliveryAPI = {
 
   // Delivery admin: Get delivery stats
   getStats: (params) => api.get("/delivery/stats", { params }),
+
+  // Delivery admin: Delete delivery person and associated user
+  deleteDeliveryPerson: (id) => api.delete(`/delivery/delivery-persons/${id}`),
 };
