@@ -12,7 +12,16 @@ export const CartProvider = ({ children }) => {
   const navigate = useNavigate();
   const [userCarts, setUserCarts] = useState(() => {
     const savedCarts = localStorage.getItem("userCarts");
-    return savedCarts ? JSON.parse(savedCarts) : {};
+    const parsed = savedCarts ? JSON.parse(savedCarts) : {};
+
+    // Auto-cleanup: Filter out items with missing IDs (legacy bug)
+    Object.keys(parsed).forEach(uid => {
+      if (Array.isArray(parsed[uid])) {
+        parsed[uid] = parsed[uid].filter(item => item && (item.id || item.product_id));
+      }
+    });
+
+    return parsed;
   });
 
   // Get current user's cart
@@ -61,7 +70,7 @@ export const CartProvider = ({ children }) => {
       } else {
         // Add new item to cart
         const newItem = {
-          id: product.id,
+          id: product.product_id || product.id, // Backend uses product_id
           name: product.product_name,
           price: product.price,
           image: product.main_image,

@@ -59,7 +59,12 @@ const Checkout = () => {
 
     setLoading(true);
     try {
-      console.log("Cart items:", cartItems);
+      // DEBUG: Check the items being processed
+      const debugItems = cartItems.map(i => ({ id: i.id, type: typeof i.id, product_id: i.product_id }));
+      console.log("Debug Items:", debugItems);
+      // NOTE: Remove this visible debugging after fixing
+      // setVisibleError(`Debug Items: ${JSON.stringify(debugItems)}`); 
+
 
       // Group items by shop
       const itemsByShop = {};
@@ -69,9 +74,16 @@ const Checkout = () => {
         if (!itemsByShop[item.shop_id]) {
           itemsByShop[item.shop_id] = [];
         }
+
+        // Ensure product ID is valid
+        const pId = parseInt(item.id);
+        if (isNaN(pId)) {
+          throw new Error(`Invalid Product ID for item: ${item.name || 'Unknown'}`);
+        }
+
         itemsByShop[item.shop_id].push({
-          product_id: parseInt(item.id),
-          quantity: item.quantity,
+          product_id: pId,
+          quantity: parseInt(item.quantity) || 1,
           price: parseFloat(item.price),
           size_id: item.size_id ? parseInt(item.size_id) : null,
         });
@@ -107,11 +119,16 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error("Place order error details:", error.response?.data || error);
-      console.error("Full error object:", JSON.stringify(error.response?.data, null, 2));
-      toast.error(
-        error.response?.data?.message ||
-        "Failed to place order. Please try again."
-      );
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.message || "Failed to place order.";
+
+      if (errorData?.errors && Array.isArray(errorData.errors)) {
+        // Detailed validation error (e.g. from express-validator)
+        const detailedMsg = errorData.errors.map(e => e.msg).join(", ");
+        toast.error(`Error: ${detailedMsg}`);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -409,7 +426,7 @@ const Checkout = () => {
               </div>
 
               <Button
-                onClick={handlePlaceOrder}
+                onClick={() => handlePlaceOrder(false)}
                 loading={loading}
                 fullWidth
                 className="mt-6"
