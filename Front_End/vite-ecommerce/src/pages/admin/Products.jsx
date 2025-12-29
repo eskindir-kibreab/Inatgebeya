@@ -26,10 +26,16 @@ const Products = () => {
     search: "",
     category_id: "",
     is_active: "",
+    include_inactive: true,
     page: 1,
-    limit: 20,
+    limit: 5,
   });
-  const [pagination, setPagination] = useState({});
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 5,
+    total: 0,
+    totalPages: 0,
+  });
   const [categories, setCategories] = useState([]);
   const [shops, setShops] = useState([]);
   const [formData, setFormData] = useState({
@@ -60,16 +66,30 @@ const Products = () => {
       );
 
       console.log("Fetching products with params:", cleanedFilters);
-      const response = await productsAPI.getAll(cleanedFilters);
+      const response = await productsAPI.getAll({
+        ...cleanedFilters,
+        page: filters.page,
+        limit: 5,
+        _t: Date.now() // Cache buster
+      });
 
       if (response.success) {
-        // Normalize product data
         const normalizedProducts = response.data.map((p) => ({
           ...p,
-          id: p.id || p.product_id,
+          id: p.product_id || p.id,
         }));
-        setProducts(normalizedProducts);
-        setPagination(response.pagination || {});
+        // Strictly limit to 5 products for display
+        const slicedProducts = normalizedProducts.slice(0, 5);
+
+        setProducts(slicedProducts);
+
+        const total = response.pagination.total;
+        setPagination({
+          ...response.pagination,
+          total,
+          limit: 5,
+          totalPages: response.pagination.pages || Math.ceil(total / 5)
+        });
       }
     } catch (error) {
       toast.error("Failed to load products");
@@ -101,7 +121,11 @@ const Products = () => {
   };
 
   const handleFilterChange = (name, value) => {
-    setFilters((prev) => ({ ...prev, [name]: value, page: 1 }));
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value,
+      page: name === "page" ? value : 1,
+    }));
   };
 
   const handleRemoveFilter = (key) => {
@@ -313,6 +337,9 @@ const Products = () => {
             <thead>
               <tr className="border-b border-border-default dark:border-gray-700">
                 <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
+                  ID
+                </th>
+                <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
                   Product
                 </th>
                 <th className="text-left p-6 font-semibold text-text-main dark:text-gray-200">
@@ -344,17 +371,19 @@ const Products = () => {
                   </td>
                 </tr>
               ) : products.length > 0 ? (
-                products.map((product, index) => (
+                products.map((product) => (
                   <tr
-                    key={index}
-                    className="border-b border-borderdefault 
+                    key={product.product_id}
+                    className="border-b border-border-default 
                                             dark:border-gray-700 hover:bg-bg-light 
                                             dark:hover:bg-gray-700"
                   >
+                    <td className="p-6 font-mono text-xs text-text-secondary">
+                      #{product.product_id}
+                    </td>
                     <td className="p-6">
 
                       <div className="flex items-center gap-3">
-                        {console.log("Image URL:", getImageUrl(product.main_image))}
                         <img
                           src={getImageUrl(product.main_image)}
                           alt={product.product_name}
@@ -438,7 +467,7 @@ const Products = () => {
         </div>
 
         {/* Pagination */}
-        {pagination.totalPages > 1 && (
+        {products.length > 0 && (
           <div className="p-6 border-t border-border-default dark:border-gray-700">
             <div className="flex items-center justify-between">
               <p className="text-text-secondary dark:text-gray-400">
@@ -451,9 +480,11 @@ const Products = () => {
                   onClick={() =>
                     handleFilterChange("page", pagination.page - 1)
                   }
-                  disabled={pagination.page === 1}
-                  className="px-4 py-2 border border-border-default rounded-lg 
-                           disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={pagination.page <= 1}
+                  className="px-4 py-2 border border-border-default dark:border-gray-700 rounded-lg 
+                           disabled:opacity-50 disabled:cursor-not-allowed
+                           hover:bg-bg-light dark:hover:bg-gray-700 transition-all duration-200
+                           text-sm font-medium text-text-main dark:text-gray-200"
                 >
                   Previous
                 </button>
@@ -461,9 +492,11 @@ const Products = () => {
                   onClick={() =>
                     handleFilterChange("page", pagination.page + 1)
                   }
-                  disabled={pagination.page === pagination.totalPages}
-                  className="px-4 py-2 border border-border-default rounded-lg 
-                           disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={pagination.page >= (pagination.totalPages || 1)}
+                  className="px-4 py-2 border border-border-default dark:border-gray-700 rounded-lg 
+                           disabled:opacity-50 disabled:cursor-not-allowed
+                           hover:bg-bg-light dark:hover:bg-gray-700 transition-all duration-200
+                           text-sm font-medium text-text-main dark:text-gray-200"
                 >
                   Next
                 </button>

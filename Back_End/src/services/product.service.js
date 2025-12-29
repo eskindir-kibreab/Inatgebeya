@@ -3,7 +3,7 @@ import pool from "../config/db.js";
 export class ProductService {
   // Get all products with filters and pagination
   // Get all products with filters and pagination
-  static async getAllProducts(filters = {}, page = 1, limit = 20) {
+  static async getAllProducts(filters = {}, page = 1, limit = 5) {
     const {
       category_id,
       shop_id,
@@ -64,17 +64,18 @@ export class ProductService {
 
     // Get total count
     const countQuery = query.replace(
-      /SELECT p\.\*, pc\.category_name, s\.shop_name, u\.full_name as creator_name/,
-      "SELECT COUNT(*) as total"
+      /SELECT[\s\S]*?FROM/,
+      "SELECT COUNT(*) as total FROM"
     );
     const [countResult] = await pool.query(countQuery, params);
     const total = countResult[0].total;
 
     // Add sorting and pagination
-    query += " ORDER BY p.created_at DESC LIMIT ? OFFSET ?";
+    query += " ORDER BY p.product_id ASC LIMIT ? OFFSET ?";
     params.push(parseInt(limit), parseInt(offset));
 
-    const [products] = await pool.query(query, params);
+    const [productsResult] = await pool.query(query, params);
+    const products = productsResult;
 
     // Get sizes for each product
     for (const product of products) {
@@ -385,7 +386,7 @@ export class ProductService {
        JOIN Shops s ON p.shop_id = s.shop_id
        WHERE p.is_active = TRUE 
        AND (p.product_name LIKE ? OR p.description LIKE ? OR pc.category_name LIKE ?)
-       ORDER BY p.created_at DESC
+       ORDER BY p.product_id ASC
        LIMIT ? OFFSET ?`,
       [
         searchPattern,

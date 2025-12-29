@@ -1,0 +1,100 @@
+[2025-12-29T06:46:31.994Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [5,0]
+Returned: 5, Total: 5
+
+[2025-12-29T06:51:52.953Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [5,0]
+Returned: 5, Total: 5
+
+[2025-12-29T06:52:14.725Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [5,0]
+Returned: 5, Total: 5
+
+[2025-12-29T06:52:14.762Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [5,0]
+Returned: 5, Total: 5
+
+[2025-12-29T06:54:22.982Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [1,0]
+Returned: 1, Total: 5
+
+[2025-12-29T06:54:23.155Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [1,0]
+Returned: 1, Total: 5
+
+[2025-12-29T06:54:23.229Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [5,0]
+Returned: 5, Total: 5
+
+[2025-12-29T06:54:23.589Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [5,0]
+Returned: 5, Total: 5
+
+[2025-12-29T06:54:25.656Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [5,0]
+Returned: 5, Total: 5
+
+[2025-12-29T06:54:25.801Z] Query: SELECT p.*, pc.category_name, s.shop_name, u.full_name as creator_name
+    FROM Products p
+    JOIN ProductCategories pc ON p.category_id = pc.category_id
+    JOIN Shops s ON p.shop_id = s.shop_id
+    JOIN Users u ON p.created_by = u.user_id
+    WHERE 1=1
+   ORDER BY p.product_id ASC LIMIT ? OFFSET ?
+Params: [5,0]
+Returned: 5, Total: 5
+

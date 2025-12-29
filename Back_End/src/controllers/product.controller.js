@@ -7,7 +7,7 @@ export const getAllProducts = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 20,
+      limit = 5,
       category_id,
       shop_id,
       min_price,
@@ -16,7 +16,9 @@ export const getAllProducts = async (req, res) => {
       is_active,
     } = req.query;
 
-    // Check if user is admin/shop_owner to include inactive products
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 5;
+
     const isAdmin = req.user && ["super_admin", "admin", "item_adder_admin", "shop_owner"].includes(req.user.role_name);
 
     const result = await ProductService.getAllProducts(
@@ -27,16 +29,23 @@ export const getAllProducts = async (req, res) => {
         max_price,
         search,
         is_active,
-        include_inactive: isAdmin && !is_active // Include inactive by default for admins if no explicit filter
+        include_inactive: isAdmin && !is_active
       },
-      page,
-      limit
+      pageNum,
+      limitNum
     );
+
+    const finalProducts = result.products.slice(0, limitNum);
+    const finalTotal = result.pagination.total;
 
     res.json({
       success: true,
-      data: result.products,
-      pagination: result.pagination,
+      data: finalProducts,
+      pagination: {
+        ...result.pagination,
+        total: finalTotal,
+        pages: Math.ceil(finalTotal / limitNum)
+      },
     });
   } catch (error) {
     console.error("Get products error:", error);
@@ -418,7 +427,7 @@ export const rateProduct = async (req, res) => {
 // Search products
 export const searchProducts = async (req, res) => {
   try {
-    const { q, page = 1, limit = 20 } = req.query;
+    const { q, page = 1, limit = 5 } = req.query;
 
     if (!q || q.trim().length < 2) {
       return res.status(400).json({
