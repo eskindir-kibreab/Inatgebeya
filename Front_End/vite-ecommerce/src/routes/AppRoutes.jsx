@@ -37,10 +37,6 @@ const AdminProductDetail = lazy(() =>
 const AdminShops = lazy(() => import("../pages/admin/Shops.jsx"));
 const AdminAreas = lazy(() => import("../pages/admin/Areas.jsx"));
 
-<<<<<<< HEAD
-
-=======
->>>>>>> main
 // Shop Owner pages
 const ShopOwnerDashboard = lazy(() =>
   import("../pages/shop-owner/Dashboard.jsx")
@@ -203,11 +199,6 @@ const AppRoutes = () => {
           }
         />
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> main
         {/* Shop Owner Routes */}
         <Route
           path="/shop-owner/dashboard"
