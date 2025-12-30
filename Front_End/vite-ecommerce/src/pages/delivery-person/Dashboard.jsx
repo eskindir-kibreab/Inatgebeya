@@ -469,7 +469,7 @@ const DeliveryPersonDashboard = () => {
           <div className="p-6 border-t border-border-default dark:border-gray-700">
             <button
               onClick={() =>
-                (window.location.href = "/delivery-person/history")
+                (window.location.href = "/coming-soon")
               }
               className="text-primary hover:text-primary-hover font-medium"
             >
@@ -507,7 +507,7 @@ const DeliveryPersonDashboard = () => {
           </button>
 
           <button
-            onClick={() => (window.location.href = "/delivery-person/map")}
+            onClick={() => (window.location.href = "/coming-soon")}
             className="p-4 border border-border-default dark:border-gray-700 
                      rounded-lg hover:border-primary hover:bg-primary/5 
                      transition-colors text-left flex items-center gap-3"
@@ -524,7 +524,7 @@ const DeliveryPersonDashboard = () => {
           </button>
 
           <button
-            onClick={() => (window.location.href = "/delivery-person/earnings")}
+            onClick={() => (window.location.href = "/coming-soon")}
             className="p-4 border border-border-default dark:border-gray-700 
                      rounded-lg hover:border-primary hover:bg-primary/5 
                      transition-colors text-left flex items-center gap-3"

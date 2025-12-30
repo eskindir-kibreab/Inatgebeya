@@ -14,6 +14,7 @@ const ResetPassword = lazy(() => import("../pages/public/ResetPassword"));
 const Search = lazy(() => import("../pages/public/Search.jsx"));
 const Shop = lazy(() => import("../pages/public/Shop.jsx"));
 const ProductDetail = lazy(() => import("../pages/public/ProductDetail.jsx"));
+const ComingSoon = lazy(() => import("../pages/public/ComingSoon.jsx"));
 
 // User pages
 const Cart = lazy(() => import("../pages/user/Cart.jsx"));
@@ -78,6 +79,7 @@ const AppRoutes = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/coming-soon" element={<ComingSoon />} />
 
         <Route path="/search" element={<Search />} />
         <Route path="/shops/:shopId" element={<Shop />} />

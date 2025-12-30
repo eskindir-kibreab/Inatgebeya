@@ -143,7 +143,12 @@ const Shop = () => {
               </div>
             </div>
 
-            <button className="mt-4 w-full btn-primary">Contact Seller</button>
+            <button
+              onClick={() => (window.location.href = "/coming-soon")}
+              className="mt-4 w-full btn-primary"
+            >
+              Contact Seller
+            </button>
           </div>
         </div>
       </div>

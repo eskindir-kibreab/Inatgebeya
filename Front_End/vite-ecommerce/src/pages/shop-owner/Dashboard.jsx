@@ -163,7 +163,7 @@ const ShopOwnerDashboard = () => {
               Manage Inventory
             </Button>
             <Button
-              onClick={() => (window.location.href = "/shop-owner/orders")}
+              onClick={() => (window.location.href = "/coming-soon")}
             >
               View Orders
             </Button>
@@ -189,8 +189,8 @@ const ShopOwnerDashboard = () => {
                 </div>
                 <span
                   className={`text-sm font-medium ${stat.change.startsWith("+")
-                      ? "text-green-600"
-                      : "text-red-600"
+                    ? "text-green-600"
+                    : "text-red-600"
                     }`}
                 >
                   {stat.change}
@@ -269,7 +269,7 @@ const ShopOwnerDashboard = () => {
 
           <div className="p-6 border-t border-border-default dark:border-gray-700">
             <button
-              onClick={() => (window.location.href = "/shop-owner/orders")}
+              onClick={() => (window.location.href = "/coming-soon")}
               className="text-primary hover:text-primary-hover font-medium"
             >
               View All Orders →
@@ -324,7 +324,7 @@ const ShopOwnerDashboard = () => {
             </div>
 
             <button
-              onClick={() => (window.location.href = "/shop-owner/settings")}
+              onClick={() => (window.location.href = "/coming-soon")}
               className="w-full mt-6 py-3 border border-primary text-primary 
                        hover:bg-primary/10 rounded-lg font-medium"
             >
@@ -353,7 +353,7 @@ const ShopOwnerDashboard = () => {
               </button>
 
               <button
-                onClick={() => (window.location.href = "/shop-owner/orders")}
+                onClick={() => (window.location.href = "/coming-soon")}
                 className="p-4 border border-border-default dark:border-gray-700 
                          rounded-lg hover:border-primary hover:bg-primary/5 
                          transition-colors text-center"
@@ -363,7 +363,7 @@ const ShopOwnerDashboard = () => {
               </button>
 
               <button
-                onClick={() => (window.location.href = "/shop-owner/analytics")}
+                onClick={() => (window.location.href = "/coming-soon")}
                 className="p-4 border border-border-default dark:border-gray-700 
                          rounded-lg hover:border-primary hover:bg-primary/5 
                          transition-colors text-center"
@@ -373,7 +373,7 @@ const ShopOwnerDashboard = () => {
               </button>
 
               <button
-                onClick={() => (window.location.href = "/shop-owner/returns")}
+                onClick={() => (window.location.href = "/coming-soon")}
                 className="p-4 border border-border-default dark:border-gray-700 
                          rounded-lg hover:border-primary hover:bg-primary/5 
                          transition-colors text-center"

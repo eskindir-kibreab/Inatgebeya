@@ -178,11 +178,10 @@ const AdminDashboard = () => {
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <span
-                  className={`text-sm font-medium ${
-                    stat.change.startsWith("+")
+                  className={`text-sm font-medium ${stat.change.startsWith("+")
                       ? "text-green-600"
                       : "text-red-600"
-                  }`}
+                    }`}
                 >
                   {stat.change}
                 </span>
@@ -230,13 +229,12 @@ const AdminDashboard = () => {
                       </p>
                       <span
                         className={`inline-block mt-1 px-2 py-1 text-xs rounded-full capitalize
-                                     ${
-                                       order.status === "delivered"
-                                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                         : order.status === "pending"
-                                         ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                                         : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                                     }`}
+                                     ${order.status === "delivered"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                            : order.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                          }`}
                       >
                         {order.status}
                       </span>
@@ -255,7 +253,7 @@ const AdminDashboard = () => {
 
           <div className="p-6 border-t border-border-default dark:border-gray-700">
             <button
-              onClick={() => (window.location.href = "/admin/orders")}
+              onClick={() => (window.location.href = "/coming-soon")}
               className="text-primary hover:text-primary-hover font-medium"
             >
               View All Orders →
@@ -300,11 +298,10 @@ const AdminDashboard = () => {
                     <div className="text-right">
                       <span
                         className={`px-2 py-1 text-xs rounded-full
-                                     ${
-                                       product.is_active
-                                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                         : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                                     }`}
+                                     ${product.is_active
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                          }`}
                       >
                         {product.is_active ? "Active" : "Inactive"}
                       </span>
