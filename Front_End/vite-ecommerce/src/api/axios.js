@@ -1,9 +1,9 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 
-// Use the backend IP as fallback
+// Use the environment variable for API base URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://10.198.75.102:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || `${import.meta.env.VITE_API_BASE_URL}/api` || "/api",
   headers: {
     "Content-Type": "application/json",
   },
