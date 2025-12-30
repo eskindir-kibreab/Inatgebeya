@@ -6,6 +6,7 @@ import {
   logoutUserService,
   forgotPasswordService,
   verifyOTPService,
+  verifyRegistrationOTPService,
   resetPasswordService,
   resendOTPService,
   getCurrentUserService,
@@ -27,10 +28,9 @@ export const register = async (req, res) => {
     if (result.error)
       return res.status(400).json({ success: false, message: result.error });
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
-      message: "User registered successfully",
-      data: result,
+      message: "OTP sent to your email. Please verify to complete registration.",
     });
   } catch (err) {
     console.error("Register error:", err);
@@ -94,7 +94,6 @@ export const forgotPassword = async (req, res) => {
     res.json({
       success: true,
       message: "If your email exists, you will receive an OTP",
-      ...(process.env.NODE_ENV === "development" && { otp: result?.otpCode }),
     });
   } catch (err) {
     console.error("Forgot password error:", err);
@@ -107,24 +106,47 @@ export const forgotPassword = async (req, res) => {
 // ------------------ VERIFY OTP ------------------
 export const verifyOTP = async (req, res) => {
   try {
-    console.log("BODY:", req.body);
+    const { email, otp_code } = req.body;
 
-    const result = await verifyOTPService(req.body);
+    // 1. Try password reset verification
+    const resetResult = await verifyOTPService({ email, otp_code });
 
-    if (result.error)
-      return res.status(400).json({ success: false, message: result.error });
+    if (!resetResult.error) {
+      return res.json({
+        success: true,
+        type: "password_reset",
+        message: "OTP verified successfully",
+        verification_token: resetResult.verificationToken,
+        expires_in: "10 minutes",
+      });
+    }
 
-    res.json({
-      success: true,
-      message: "OTP verified successfully",
-      verification_token: result.verificationToken,
-      expires_in: "10 minutes",
+    // 2. Try registration verification
+    const regResult = await verifyRegistrationOTPService({ email, otp_code }, {
+      userAgent: req.get("User-Agent"),
+      ipAddress: req.ip || req.connection?.remoteAddress,
     });
+
+    if (!regResult.error) {
+      const { password_hash, ...safeUser } = regResult;
+      return res.json({
+        success: true,
+        type: "registration",
+        message: "Registration verified successfully",
+        data: { user: safeUser, token: regResult.token },
+      });
+    }
+
+    // Both failed
+    return res.status(400).json({
+      success: false,
+      message: regResult.error || resetResult.error || "Invalid or expired OTP"
+    });
+
   } catch (err) {
     console.error("Verify OTP error:", err);
     res.status(500).json({ success: false, message: "Failed to verify OTP" });
   }
-  console.log("BODY:", req.body);
 };
 
 // ------------------ RESET PASSWORD ------------------
@@ -137,7 +159,11 @@ export const resetPassword = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Password reset successful. You can now login.",
+      message: "Password reset successful.",
+      data: {
+        user: result.user,
+        token: result.token,
+      },
     });
   } catch (err) {
     console.error("Reset password error:", err);
@@ -158,7 +184,6 @@ export const resendOTP = async (req, res) => {
     res.json({
       success: true,
       message: "New OTP sent",
-      ...(process.env.NODE_ENV === "development" && { otp: result.otpCode }),
     });
   } catch (err) {
     console.error("Resend OTP error:", err);

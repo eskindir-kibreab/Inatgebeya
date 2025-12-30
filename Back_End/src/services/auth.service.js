@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import pool from "../config/db.js";
-import { sendPasswordResetOTP, sendWelcomeEmail } from "../utils/email.util.js";
+import { sendPasswordResetOTP, sendWelcomeEmail, sendRegistrationOTP } from "../utils/email.util.js";
 
 // Helper to generate OTP
 export const generateOTP = () =>
@@ -23,6 +23,43 @@ export const registerUserService = async (
     return { error: "User with this email already exists" };
   }
 
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const otpCode = generateOTP();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  // Delete any existing pending registrations for this email
+  await pool.query("DELETE FROM pendingregistrations WHERE email = ?", [email]);
+
+  // Store in pendingregistrations
+  await pool.query(
+    `INSERT INTO pendingregistrations (full_name, email, password_hash, phone, otp_code, expires_at) 
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [full_name, email, hashedPassword, phone || null, otpCode, expiresAt]
+  );
+
+  // Send registration OTP email
+  await sendRegistrationOTP(email, otpCode);
+
+  return {
+    success: true,
+    message: "OTP sent to email",
+  };
+};
+
+// ------------------ VERIFY REGISTRATION OTP ------------------
+export const verifyRegistrationOTPService = async ({ email, otp_code }, meta = {}) => {
+  const [pending] = await pool.query(
+    `SELECT * FROM pendingregistrations 
+     WHERE email = ? AND otp_code = ? AND expires_at > NOW()`,
+    [email, otp_code]
+  );
+
+  if (pending.length === 0) {
+    return { error: "Invalid or expired OTP" };
+  }
+
+  const userData = pending[0];
+
   // Get user role
   const [roles] = await pool.query(
     "SELECT role_id FROM Roles WHERE role_name = ?",
@@ -32,23 +69,30 @@ export const registerUserService = async (
     return { error: "User role not found" };
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-
   // Create user
   const [result] = await pool.query(
     `INSERT INTO Users (full_name, email, password_hash, phone, role_id, is_active) 
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [full_name, email, hashedPassword, phone || null, roles[0].role_id, true]
+    [
+      userData.full_name,
+      userData.email,
+      userData.password_hash,
+      userData.phone,
+      roles[0].role_id,
+      true,
+    ]
   );
+
+  const userId = result.insertId;
 
   // Initialize coins
   await pool.query("INSERT INTO UserCoins (user_id, balance) VALUES (?, 0)", [
-    result.insertId,
+    userId,
   ]);
 
   // Generate token
   const token = jwt.sign(
-    { userId: result.insertId, email },
+    { userId, email: userData.email, role: "user" },
     process.env.JWT_SECRET,
     {
       expiresIn: process.env.JWT_EXPIRES_IN,
@@ -64,7 +108,7 @@ export const registerUserService = async (
     await pool.query(
       `INSERT INTO usertokens (user_id, token, expires_at, user_agent, ip_address) VALUES (?, ?, ?, ?, ?)`,
       [
-        result.insertId,
+        userId,
         token,
         expiresAt,
         meta.userAgent || null,
@@ -72,18 +116,22 @@ export const registerUserService = async (
       ]
     );
   } catch (err) {
-    // log but continue (not fatal)
-    console.error("Failed to store token after register:", err);
+    console.error("Failed to store token after verification:", err);
   }
 
-  // Send welcome email (non-blocking errors handled inside util)
-  await sendWelcomeEmail(email, full_name);
+  // Send welcome email
+  await sendWelcomeEmail(userData.email, userData.full_name);
+
+  // Delete pending registration
+  await pool.query("DELETE FROM pendingregistrations WHERE id = ?", [
+    userData.id,
+  ]);
 
   return {
-    userId: result.insertId,
-    full_name,
-    email,
-    phone,
+    userId,
+    full_name: userData.full_name,
+    email: userData.email,
+    phone: userData.phone,
     role: "user",
     token,
   };
@@ -264,7 +312,7 @@ export const resetPasswordService = async ({
 }) => {
   const [verifications] = await pool.query(
     `SELECT pr.*, u.email 
-     FROM PasswordResets pr
+     FROM passwordresets pr
      JOIN Users u ON pr.user_id = u.user_id
      WHERE pr.verification_token = ? 
      AND pr.token_expires_at > NOW()
@@ -286,15 +334,68 @@ export const resetPasswordService = async ({
   ]);
 
   // remove used reset rows
-  await pool.query("DELETE FROM PasswordResets WHERE reset_id = ?", [
+  await pool.query("DELETE FROM passwordresets WHERE reset_id = ?", [
     verification.reset_id,
   ]);
 
-  return { success: true };
+  // 5. Get full user data for auto-login
+  const [users] = await pool.query(
+    `SELECT u.*, r.role_name 
+     FROM Users u 
+     JOIN Roles r ON u.role_id = r.role_id 
+     WHERE u.user_id = ?`,
+    [verification.user_id]
+  );
+
+  const user = users[0];
+
+  // 6. Generate token
+  const token = jwt.sign(
+    { userId: user.user_id, email: user.email, role: user.role_name },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN }
+  );
+
+  // 7. Store token in DB
+  try {
+    const expiresAt = process.env.JWT_EXPIRES_IN
+      ? new Date(Date.now() + parseJWTExpiresMs(process.env.JWT_EXPIRES_IN))
+      : null;
+
+    await pool.query(
+      `INSERT INTO usertokens (user_id, token, expires_at) VALUES (?, ?, ?)`,
+      [user.user_id, token, expiresAt]
+    );
+  } catch (err) {
+    console.error("Failed to store token after reset:", err);
+  }
+
+  const { password_hash, ...safeUser } = user;
+  return { success: true, user: safeUser, token };
 };
 
 // ------------------ RESEND OTP ------------------
 export const resendOTPService = async (email) => {
+  // 1. Check if it's a pending registration
+  const [pending] = await pool.query(
+    "SELECT * FROM pendingregistrations WHERE email = ?",
+    [email]
+  );
+
+  if (pending.length > 0) {
+    const otpCode = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    await pool.query(
+      "UPDATE pendingregistrations SET otp_code = ?, expires_at = ? WHERE email = ?",
+      [otpCode, expiresAt, email]
+    );
+
+    await sendRegistrationOTP(email, otpCode);
+    return { otpCode };
+  }
+
+  // 2. Check if it's an existing user (forgot password)
   const [users] = await pool.query(
     "SELECT user_id FROM Users WHERE email = ? AND is_active = TRUE",
     [email]

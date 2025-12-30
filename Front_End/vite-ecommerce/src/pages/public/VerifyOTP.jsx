@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Key, ArrowLeft, Clock } from "lucide-react";
 import { authAPI } from "../../api/auth.api";
+import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
 
 const VerifyOTP = () => {
+  const { fetchUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState(location.state?.email || "");
@@ -114,15 +116,23 @@ const VerifyOTP = () => {
       });
 
       if (response.success) {
-        setVerificationToken(response.data.verification_token);
-        toast.success("OTP verified successfully!");
-        // Navigate to reset password page
-        navigate("/reset-password", {
-          state: {
-            verification_token: response.data.verification_token,
-            email,
-          },
-        });
+        if (response.type === "registration") {
+          // Registration success - log user in
+          sessionStorage.setItem("token", response.data.token);
+          await fetchUser();
+          toast.success("Registration verified and logged in successfully!");
+          navigate("/"); // Redirect to landing page
+        } else {
+          // Password reset success
+          setVerificationToken(response.verification_token);
+          toast.success("OTP verified successfully!");
+          navigate("/reset-password", {
+            state: {
+              verification_token: response.verification_token,
+              email,
+            },
+          });
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Invalid OTP");
@@ -180,9 +190,8 @@ const VerifyOTP = () => {
           <div className="flex items-center justify-center gap-2 mb-8">
             <Clock className="w-5 h-5 text-text-secondary" />
             <span
-              className={`font-medium ${
-                timeLeft < 60 ? "text-red-600" : "text-text-main"
-              }`}
+              className={`font-medium ${timeLeft < 60 ? "text-red-600" : "text-text-main"
+                }`}
             >
               {formatTime(timeLeft)}
             </span>

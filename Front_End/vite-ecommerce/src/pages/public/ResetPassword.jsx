@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Lock, CheckCircle, ArrowLeft } from "lucide-react";
 import { authAPI } from "../../api";
+import { useAuth } from "../../context/AuthContext";
 import Input from "../../components/forms/Input";
 import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
@@ -9,6 +10,7 @@ import toast from "react-hot-toast";
 const ResetPassword = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { fetchUser } = useAuth();
   const [verificationToken, setVerificationToken] = useState(
     location.state?.verification_token || ""
   );
@@ -82,10 +84,22 @@ const ResetPassword = () => {
       if (response.success) {
         toast.success("Password reset successfully!");
 
-        // Show success message for 2 seconds then redirect
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
+        // Auto-login logic
+        const { token, user } = response.data;
+        sessionStorage.setItem("token", token);
+        await fetchUser();
+
+        // Redirect based on role
+        const role = user.role_name;
+        if (role === "admin" || role === "super_admin") {
+          navigate("/admin/dashboard");
+        } else if (role === "shop_owner") {
+          navigate("/shop-owner/dashboard");
+        } else if (role === "delivery_person") {
+          navigate("/delivery-person/dashboard");
+        } else {
+          navigate("/");
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to reset password");
@@ -144,54 +158,48 @@ const ResetPassword = () => {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <CheckCircle
-                    className={`w-4 h-4 ${
-                      passwordRequirements.length
+                    className={`w-4 h-4 ${passwordRequirements.length
                         ? "text-green-600"
                         : "text-gray-300"
-                    }`}
+                      }`}
                   />
                   <span
-                    className={`text-sm ${
-                      passwordRequirements.length
+                    className={`text-sm ${passwordRequirements.length
                         ? "text-green-600"
                         : "text-text-secondary"
-                    }`}
+                      }`}
                   >
                     At least 6 characters
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle
-                    className={`w-4 h-4 ${
-                      passwordRequirements.letter
+                    className={`w-4 h-4 ${passwordRequirements.letter
                         ? "text-green-600"
                         : "text-gray-300"
-                    }`}
+                      }`}
                   />
                   <span
-                    className={`text-sm ${
-                      passwordRequirements.letter
+                    className={`text-sm ${passwordRequirements.letter
                         ? "text-green-600"
                         : "text-text-secondary"
-                    }`}
+                      }`}
                   >
                     At least one letter
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle
-                    className={`w-4 h-4 ${
-                      passwordRequirements.number
+                    className={`w-4 h-4 ${passwordRequirements.number
                         ? "text-green-600"
                         : "text-gray-300"
-                    }`}
+                      }`}
                   />
                   <span
-                    className={`text-sm ${
-                      passwordRequirements.number
+                    className={`text-sm ${passwordRequirements.number
                         ? "text-green-600"
                         : "text-text-secondary"
-                    }`}
+                      }`}
                   >
                     At least one number
                   </span>
@@ -218,11 +226,10 @@ const ResetPassword = () => {
             {/* Password Match Check */}
             {formData.confirmPassword && (
               <div
-                className={`mb-6 p-3 rounded-lg ${
-                  formData.newPassword === formData.confirmPassword
+                className={`mb-6 p-3 rounded-lg ${formData.newPassword === formData.confirmPassword
                     ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
                     : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   {formData.newPassword === formData.confirmPassword ? (

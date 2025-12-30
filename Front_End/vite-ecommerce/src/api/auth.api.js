@@ -14,7 +14,7 @@ export const authAPI = {
   getProfile: () => api.get("/auth/me"),
 
   // Forgot password
-  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  forgotPassword: (data) => api.post("/auth/forgot-password", data),
 
   // Verify OTP
   verifyOTP: (data) => api.post("/auth/verify-otp", data),
@@ -23,5 +23,5 @@ export const authAPI = {
   resetPassword: (data) => api.post("/auth/reset-password", data),
 
   // Resend OTP
-  resendOTP: (email) => api.post("/auth/resend-otp", { email }),
+  resendOTP: (data) => api.post("/auth/resend-otp", data),
 };
