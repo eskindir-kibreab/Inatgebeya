@@ -255,7 +255,7 @@ const AdminProductDetail = () => {
                                     rows={6}
                                     className="w-full px-4 py-3 border border-border-default 
                            dark:border-gray-700 rounded-lg focus:outline-none 
-                           focus:ring-2 focus:ring-accent resize-none dark:bg-gray-900"
+                           focus:ring-2 focus:ring-accent resize-none bg-white dark:bg-white text-black"
                                     placeholder="Tell customers more about this product..."
                                 />
                             </div>

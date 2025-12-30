@@ -16,10 +16,8 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     category_id: "",
-    area_id: "",
     min_price: "",
     max_price: "",
-    sort_by: "newest",
   });
   const searchRef = useRef(null);
   const deliveriesRef = useRef(null);
@@ -29,29 +27,44 @@ const Header = () => {
     const params = new URLSearchParams(location.search);
     const q = params.get("q") || "";
     const category = params.get("category") || "";
-    const area = params.get("area") || "";
     const min_price = params.get("min_price") || "";
     const max_price = params.get("max_price") || "";
-    const sort_by = params.get("sort_by") || "newest";
 
     setSearchQuery(q);
     setFilters({
       category_id: category,
-      area_id: area,
       min_price,
       max_price,
-      sort_by,
     });
   }, [location.search]);
+
+  // Debounced search for real-time results
+  useEffect(() => {
+    // Only trigger if we are on the search page or if there's a valid query
+    // and prevent initial sync from triggering a new navigation if not needed
+    const params = new URLSearchParams(location.search);
+    const currentQ = params.get("q") || "";
+
+    if (searchQuery === currentQ) return;
+
+    const timer = setTimeout(() => {
+      const urlParams = new URLSearchParams(location.search);
+      if (searchQuery.trim()) {
+        urlParams.set("q", searchQuery.trim());
+      } else {
+        urlParams.delete("q");
+      }
+
+      // Navigate to search page with current query
+      navigate(`/search?${urlParams.toString()}`, { replace: location.pathname === "/search" });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, navigate, location.search, location.pathname]);
 
   // Handle click outside for mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Close search suggestions if open
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        // no-op for now; reserved if we add dropdowns near search
-      }
-
       // For mobile, close profile dropdown when clicking outside
       if (window.innerWidth < 1024 && isProfileOpen && !event.target.closest('.profile-dropdown')) {
         setIsProfileOpen(false);
@@ -87,11 +100,8 @@ const Header = () => {
     const urlParams = new URLSearchParams();
     if (searchQuery) urlParams.set("q", searchQuery.trim());
     if (newFilters.category_id) urlParams.set("category", newFilters.category_id);
-    if (newFilters.area_id) urlParams.set("area", newFilters.area_id);
     if (newFilters.min_price) urlParams.set("min_price", newFilters.min_price);
     if (newFilters.max_price) urlParams.set("max_price", newFilters.max_price);
-    if (newFilters.sort_by !== "newest")
-      urlParams.set("sort_by", newFilters.sort_by);
 
     navigate(`/search?${urlParams.toString()}`);
   };
@@ -263,7 +273,7 @@ const Header = () => {
             >
               {/* Search bar + button - Flex-1 to take remaining space */}
               {!(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
-                <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0 order-first sm:order-none">
+                <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0 order-first sm:order-none relative">
                   <div className="relative">
                     <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4 sm:w-5 sm:h-5" />
                     <input
@@ -272,17 +282,19 @@ const Header = () => {
                       onChange={handleSearchChange}
                       placeholder="Search..."
                       className="w-full pl-7 sm:pl-10 pr-10 sm:pr-28 py-1.5 sm:py-2 border border-border-default rounded-lg 
-                       bg-white dark:bg-gray-800 dark:border-gray-700 
-                       focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-xs sm:text-base min-w-0"
+                       bg-white dark:bg-gray-800 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-accent 
+                       focus:border-transparent text-xs sm:text-base min-w-0 text-black dark:text-white transition-all"
                     />
-                    <button
-                      type="submit"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 px-2 sm:px-4 py-1 sm:py-1.5 rounded-md 
-                               bg-primary text-white text-xs sm:text-sm font-medium hover:bg-primary-hover transition-colors"
-                    >
-                      <span className="hidden xs:inline">Search</span>
-                      <Search className="xs:hidden w-4 h-4" />
-                    </button>
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <button
+                        type="submit"
+                        className="px-2 sm:px-4 py-1 sm:py-1.5 rounded-md 
+                                 bg-primary text-white text-xs sm:text-sm font-medium hover:bg-primary-hover transition-colors"
+                      >
+                        <span className="hidden xs:inline">Search</span>
+                        <Search className="xs:hidden w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </form>
               )}

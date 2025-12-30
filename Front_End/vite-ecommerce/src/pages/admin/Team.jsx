@@ -303,7 +303,7 @@ const AdminTeam = () => {
                           }
                         }}
                         className="px-3 py-1 border border-border-default dark:border-gray-700 
-                                 rounded-lg bg-transparent text-sm cursor-pointer hover:border-primary transition-colors"
+                                 rounded-lg bg-white dark:bg-white text-black text-sm cursor-pointer hover:border-primary transition-colors"
                       >
                         {areaOptions.slice(1).map((option) => (
                           <option

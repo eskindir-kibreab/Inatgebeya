@@ -48,7 +48,7 @@ const Input = ({
               ? "border-red-500 focus:ring-red-500 focus:border-red-500"
               : "border-border-default dark:border-gray-700 focus:ring-accent focus:border-accent"
             }
-                     bg-white dark:bg-gray-800 text-text-main dark:text-gray-200
+                     bg-white dark:bg-white text-black
                      disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed
                      ${isPassword ? "pr-12" : ""} 
                      ${className}`}

@@ -370,7 +370,7 @@ const Checkout = () => {
                 placeholder="Add special instructions for your order..."
                 className="w-full h-32 px-4 py-3 border border-border-default 
                          dark:border-gray-700 rounded-lg resize-none 
-                         focus:outline-none focus:ring-2 focus:ring-accent"
+                         focus:outline-none focus:ring-2 focus:ring-accent bg-white dark:bg-white text-black"
               />
             </div>
           </div>

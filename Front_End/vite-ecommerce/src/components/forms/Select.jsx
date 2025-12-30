@@ -34,12 +34,11 @@ const Select = ({
           onChange={onChange}
           disabled={disabled}
           className={`w-full px-4 py-3 border rounded-lg appearance-none transition-colors
-                     ${
-                       error
-                         ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                         : "border-border-default dark:border-gray-700 focus:ring-accent focus:border-accent"
-                     }
-                     bg-white dark:bg-gray-800 text-text-main dark:text-gray-200
+                     ${error
+              ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+              : "border-border-default dark:border-gray-700 focus:ring-accent focus:border-accent"
+            }
+                     bg-white dark:bg-white text-black
                      disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed
                      ${className}`}
           aria-invalid={!!error}

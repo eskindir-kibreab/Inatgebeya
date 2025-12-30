@@ -156,7 +156,7 @@ const NewOrder = () => {
                 <textarea
                   id="shipping-address"
                   rows="4"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-white text-black"
                   placeholder="Enter your full shipping address"
                   value={shippingAddress}
                   onChange={(e) => setShippingAddress(e.target.value)}
@@ -215,7 +215,7 @@ const NewOrder = () => {
                 <textarea
                   id="order-notes"
                   rows="3"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-white text-black"
                   placeholder="Special instructions for your order..."
                   value={orderNote}
                   onChange={(e) => setOrderNote(e.target.value)}

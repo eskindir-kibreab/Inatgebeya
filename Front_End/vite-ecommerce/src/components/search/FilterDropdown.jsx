@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, X, Sliders } from "lucide-react";
 import { categoriesAPI } from "../../api/categories.api";
-import { areasAPI } from "../../api/areas.api";
 
 const FilterDropdown = ({ onFilterChange, currentFilters }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState({
     categories: false,
-    areas: false,
   });
   const [filters, setFilters] = useState({
     category_id: currentFilters.category_id || "",
-    area_id: currentFilters.area_id || "",
     min_price: currentFilters.min_price || "",
     max_price: currentFilters.max_price || "",
-    sort_by: currentFilters.sort_by || "newest",
   });
 
   useEffect(() => {
@@ -35,18 +30,6 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
     } finally {
       setLoading((prev) => ({ ...prev, categories: false }));
     }
-
-    try {
-      setLoading((prev) => ({ ...prev, areas: true }));
-      const areasRes = await areasAPI.getAll();
-      if (areasRes.success) {
-        setAreas(areasRes.data);
-      }
-    } catch (error) {
-      console.error("Error fetching areas:", error);
-    } finally {
-      setLoading((prev) => ({ ...prev, areas: false }));
-    }
   };
 
   const handleFilterChange = (name, value) => {
@@ -58,10 +41,8 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
   const handleClearFilters = () => {
     const clearedFilters = {
       category_id: "",
-      area_id: "",
       min_price: "",
       max_price: "",
-      sort_by: "newest",
     };
     setFilters(clearedFilters);
     onFilterChange(clearedFilters);
@@ -70,10 +51,8 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
   const hasActiveFilters = () => {
     return (
       filters.category_id ||
-      filters.area_id ||
       filters.min_price ||
-      filters.max_price ||
-      filters.sort_by !== "newest"
+      filters.max_price
     );
   };
 
@@ -144,38 +123,12 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
                     handleFilterChange("category_id", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-border-default dark:border-gray-700 
-                           rounded-lg bg-white dark:bg-gray-800 text-sm"
+                           rounded-lg bg-white dark:bg-white text-sm text-black"
                 >
                   <option value="">All Categories</option>
                   {categories.map((category) => (
                     <option key={category.category_id} value={category.category_id}>
                       {category.category_name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Area Filter */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-text-main dark:text-gray-200 mb-2">
-                Area
-              </label>
-              {loading.areas ? (
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-              ) : (
-                <select
-                  value={filters.area_id}
-                  onChange={(e) =>
-                    handleFilterChange("area_id", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-border-default dark:border-gray-700 
-                           rounded-lg bg-white dark:bg-gray-800 text-sm"
-                >
-                  <option value="">All Areas</option>
-                  {areas.map((area) => (
-                    <option key={area.area_id} value={area.area_id}>
-                      {area.area_name}
                     </option>
                   ))}
                 </select>
@@ -197,7 +150,7 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
                       handleFilterChange("min_price", e.target.value)
                     }
                     className="w-full px-3 py-2 border border-border-default dark:border-gray-700 
-                             rounded-lg text-sm"
+                             rounded-lg text-sm bg-white dark:bg-white text-black"
                   />
                 </div>
                 <div>
@@ -209,29 +162,10 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
                       handleFilterChange("max_price", e.target.value)
                     }
                     className="w-full px-3 py-2 border border-border-default dark:border-gray-700 
-                             rounded-lg text-sm"
+                             rounded-lg text-sm bg-white dark:bg-white text-black"
                   />
                 </div>
               </div>
-            </div>
-
-            {/* Sort By */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-text-main dark:text-gray-200 mb-2">
-                Sort By
-              </label>
-              <select
-                value={filters.sort_by}
-                onChange={(e) => handleFilterChange("sort_by", e.target.value)}
-                className="w-full px-3 py-2 border border-border-default dark:border-gray-700 
-                         rounded-lg bg-white dark:bg-gray-800 text-sm"
-              >
-                <option value="newest">Newest First</option>
-                <option value="price_low">Price: Low to High</option>
-                <option value="price_high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-                <option value="popular">Most Popular</option>
-              </select>
             </div>
 
             {/* Active Filters Summary */}
@@ -250,12 +184,6 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
                       }
                     </span>
                   )}
-                  {filters.area_id && (
-                    <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded">
-                      Area:{" "}
-                      {areas.find((a) => a.area_id == filters.area_id)?.area_name}
-                    </span>
-                  )}
                   {filters.min_price && (
                     <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded">
                       Min: ETB {filters.min_price}
@@ -264,11 +192,6 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
                   {filters.max_price && (
                     <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded">
                       Max: ETB {filters.max_price}
-                    </span>
-                  )}
-                  {filters.sort_by !== "newest" && (
-                    <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded">
-                      Sort: {filters.sort_by.replace("_", " ")}
                     </span>
                   )}
                 </div>

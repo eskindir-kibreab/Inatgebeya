@@ -90,7 +90,7 @@ const Cart = () => {
               placeholder="Add special instructions for your order..."
               className="w-full h-32 px-4 py-3 border border-border-default 
                        dark:border-gray-700 rounded-lg resize-none 
-                       focus:outline-none focus:ring-2 focus:ring-accent"
+                       focus:outline-none focus:ring-2 focus:ring-accent bg-white dark:bg-white text-black"
             />
           </div>
         </div>
@@ -102,11 +102,10 @@ const Cart = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-border-default dark:border-gray-700 p-6">
             <Link
               to="/checkout"
-              className={`w-full py-3 rounded-lg font-medium text-center block ${
-                cartCount === 0
+              className={`w-full py-3 rounded-lg font-medium text-center block ${cartCount === 0
                   ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
                   : "bg-primary hover:bg-primary-hover text-white"
-              }`}
+                }`}
               onClick={(e) => cartCount === 0 && e.preventDefault()}
             >
               Continue to Checkout
@@ -130,7 +129,7 @@ const Cart = () => {
                 placeholder="Enter promo code"
                 className="flex-1 px-4 py-3 border border-border-default 
                          dark:border-gray-700 rounded-lg focus:outline-none 
-                         focus:ring-2 focus:ring-accent"
+                         focus:ring-2 focus:ring-accent bg-white dark:bg-white text-black"
               />
               <button
                 className="px-6 py-3 border border-primary text-primary 

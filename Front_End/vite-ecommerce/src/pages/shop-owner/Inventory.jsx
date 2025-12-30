@@ -391,17 +391,16 @@ const ShopOwnerInventory = () => {
                             )
                           }
                           className="w-20 px-3 py-1 border border-border-default 
-                                   dark:border-gray-700 rounded text-center"
+                                   dark:border-gray-700 rounded text-center bg-white dark:bg-white text-black"
                         />
                         <span
                           className={`text-sm px-2 py-1 rounded-full
-                                       ${
-                                         (product.stock || 0) === 0
-                                           ? "bg-red-100 text-red-800 dark:bg-red-900/20"
-                                           : (product.stock || 0) < 10
-                                           ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20"
-                                           : "bg-green-100 text-green-800 dark:bg-green-900/20"
-                                       }`}
+                                       ${(product.stock || 0) === 0
+                              ? "bg-red-100 text-red-800 dark:bg-red-900/20"
+                              : (product.stock || 0) < 10
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20"
+                                : "bg-green-100 text-green-800 dark:bg-green-900/20"
+                            }`}
                         >
                           {product.stock || 0}
                         </span>
@@ -410,11 +409,10 @@ const ShopOwnerInventory = () => {
                     <td className="p-6">
                       <span
                         className={`px-3 py-1 rounded-full text-sm font-medium
-                                     ${
-                                       product.is_active
-                                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                         : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                                     }`}
+                                     ${product.is_active
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                          }`}
                       >
                         {product.is_active ? "Active" : "Inactive"}
                       </span>
@@ -458,8 +456,8 @@ const ShopOwnerInventory = () => {
                     </h3>
                     <p className="text-text-secondary dark:text-gray-400">
                       {filters.search ||
-                      filters.category_id ||
-                      filters.stock_status
+                        filters.category_id ||
+                        filters.stock_status
                         ? "Try adjusting your search or filters"
                         : "Add your first product to start selling"}
                     </p>
@@ -570,7 +568,7 @@ const ShopOwnerInventory = () => {
                   rows={3}
                   className="w-full px-4 py-3 border border-border-default 
                            dark:border-gray-700 rounded-lg focus:outline-none 
-                           focus:ring-2 focus:ring-accent resize-none"
+                           focus:ring-2 focus:ring-accent resize-none bg-white dark:bg-white text-black"
                 />
               </div>
               <div className="flex gap-3">
@@ -654,7 +652,7 @@ const ShopOwnerInventory = () => {
                   rows={3}
                   className="w-full px-4 py-3 border border-border-default 
                            dark:border-gray-700 rounded-lg focus:outline-none 
-                           focus:ring-2 focus:ring-accent resize-none"
+                           focus:ring-2 focus:ring-accent resize-none bg-white dark:bg-white text-black"
                 />
               </div>
               <div className="flex gap-3">

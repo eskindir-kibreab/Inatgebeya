@@ -220,8 +220,8 @@ const VerifyOTP = () => {
                   onPaste={index === 0 ? handlePaste : undefined}
                   className="w-9 h-12 sm:w-12 sm:h-14 text-xl sm:text-2xl text-center border-2 border-border-default 
                            dark:border-gray-700 rounded-lg focus:border-primary 
-                           focus:ring-2 focus:ring-primary/20 bg-transparent
-                           dark:text-gray-200
+                           focus:ring-2 focus:ring-primary/20 bg-white
+                           text-black
                            disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={loading}
                   autoFocus={index === 0}

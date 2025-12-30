@@ -249,7 +249,7 @@ const Deliveries = () => {
                       </label>
                       <select
                         className="w-full px-4 py-2 border border-border-default 
-                                 dark:border-gray-700 rounded-lg"
+                                 dark:border-gray-700 rounded-lg bg-white dark:bg-white text-black"
                         onChange={(e) =>
                           handleAssignDelivery(delivery.id, e.target.value)
                         }
