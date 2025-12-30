@@ -106,7 +106,12 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-bg-dark shadow-sm">
-      <div className="container mx-auto px-4 py-3">
+      <div
+        className={`container mx-auto px-4 ${role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN
+            ? "py-6"
+            : "py-3"
+          }`}
+      >
         <div className="flex items-center gap-4">
           {/* Logo */}
           <Link to={isRoleBasedPage ? (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN ? "/admin/dashboard" : "/") : "/"} className="flex items-center space-x-2">
