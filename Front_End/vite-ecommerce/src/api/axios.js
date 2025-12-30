@@ -1,13 +1,13 @@
-// src/api/axios.js - KEEP YOUR VERSION
 import axios from "axios";
 import toast from "react-hot-toast";
 
-// Create axios instance
+// Use the backend IP as fallback
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://10.198.75.102:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // important for JWT cookies
 });
 
 // Request interceptor to add JWT token
@@ -19,9 +19,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor for error handling
@@ -30,13 +28,10 @@ api.interceptors.response.use(
   (error) => {
     const message = error.response?.data?.message || "An error occurred";
 
-    // Handle specific status codes
     if (error.response?.status === 401) {
       sessionStorage.removeItem("token");
       window.location.href = "/login";
-    }
-
-    if (error.response?.status !== 401) {
+    } else {
       toast.error(message);
     }
 

@@ -7,10 +7,11 @@ import rateLimit from "express-rate-limit";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { config } from "dotenv";
+import { existsSync } from "fs";
 
 config();
 
-// Import routes
+// Routes
 import authRoutes from "./src/routes/auth.routes.js";
 import userRoutes from "./src/routes/user.routes.js";
 import shopRoutes from "./src/routes/shop.routes.js";
@@ -22,41 +23,47 @@ import deliveryRoutes from "./src/routes/delivery.routes.js";
 
 const app = express();
 
-// Security middlewares
+/* ===============================
+   Security & Core Middleware
+================================ */
 app.use(helmet());
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
 });
-//app.use("/api/", limiter);
+// app.use("/api", limiter);
 
-// Middleware
 app.use(compression());
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+/* ===============================
+   Static Uploads
+================================ */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-import { existsSync } from "fs";
-
-// ... (keep existing imports)
-
-// Serve uploaded files
 const uploadsPath = join(__dirname, "uploads");
-console.log("Serving uploads from:", uploadsPath);
+
+if (!existsSync(uploadsPath)) {
+  console.warn("⚠️ Uploads directory not found:", uploadsPath);
+}
+
 app.use("/uploads", express.static(uploadsPath));
 
-// Routes
+/* ===============================
+   Routes
+================================ */
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/shops", shopRoutes);
@@ -66,12 +73,19 @@ app.use("/api/areas", areaRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/delivery", deliveryRoutes);
 
-// Health check
+/* ===============================
+   Health Check
+================================ */
 app.get("/api/health", (req, res) => {
-  res.json({ status: "OK", message: "InatGebeya API is running" });
+  res.json({
+    status: "OK",
+    message: "InatGebeya API is running",
+  });
 });
 
-// 404 handler
+/* ===============================
+   404 Handler
+================================ */
 app.use("*", (req, res) => {
   res.status(404).json({
     success: false,
@@ -79,9 +93,11 @@ app.use("*", (req, res) => {
   });
 });
 
-// Error handler
+/* ===============================
+   Global Error Handler
+================================ */
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(err);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal server error",
@@ -89,12 +105,19 @@ app.use((err, req, res, next) => {
   });
 });
 
+/* ===============================
+   Server Start
+================================ */
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📁 Uploads directory: ${process.cwd()}/uploads`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("====================================");
+  console.log(`🚀 Server running`);
+  console.log(`🌐 API: http://10.198.75.102:${PORT}`);
+  console.log(`🖥 Frontend Allowed: ${process.env.FRONTEND_URL}`);
+  console.log(`📁 Uploads: ${uploadsPath}`);
+  console.log(`❤️ Health: http://10.198.75.102:${PORT}/api/health`);
+  console.log("====================================");
 });
 
 export default app;

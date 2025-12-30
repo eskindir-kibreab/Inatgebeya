@@ -6,13 +6,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    host: true, // allows access from other devices in LAN
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "http://10.198.75.102:5000", // backend PC IP
         changeOrigin: true,
       },
       "/uploads": {
-        target: "http://localhost:5000",
+        target: "http://10.198.75.102:5000", // backend PC IP
         changeOrigin: true,
       },
     },
