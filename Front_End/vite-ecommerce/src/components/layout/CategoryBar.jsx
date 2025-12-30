@@ -21,11 +21,27 @@ const CategoryBar = ({ onCategorySelect }) => {
     const categoryId = searchParams.get("category");
     if (categoryId) {
       setActiveCategory(parseInt(categoryId));
-    } else if (location.pathname === "/") {
-      // On landing page, if no category in URL, no category is active (optional)
-      // setActiveCategory(null); 
     }
-  }, [location.search, location.pathname]);
+  }, [location.search]);
+
+  useEffect(() => {
+    // Reorder categories to move the active one to the front
+    if (activeCategory && categories.length > 0) {
+      const activeIdx = categories.findIndex(
+        (c) => c.category_id === activeCategory
+      );
+      if (activeIdx > 0) {
+        const updatedCategories = [...categories];
+        const [activeItem] = updatedCategories.splice(activeIdx, 1);
+        setCategories([activeItem, ...updatedCategories]);
+
+        // Scroll to the beginning since the active item is now at index 0
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({ left: 0, behavior: "smooth" });
+        }
+      }
+    }
+  }, [activeCategory, categories.length]);
 
   const fetchCategories = async () => {
     try {
@@ -86,9 +102,9 @@ const CategoryBar = ({ onCategorySelect }) => {
   }
 
   return (
-    <div className="sticky top-16 z-40 bg-white dark:bg-gray-800 border-b border-border-default dark:border-gray-700">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center py-2">
+    <div className="sticky top-[64px] sm:top-[72px] z-40 bg-white dark:bg-gray-800 border-b border-border-default dark:border-gray-700">
+      <div className="container mx-auto px-2 sm:px-4">
+        <div className="flex items-center py-2 h-14">
           <button
             onClick={scrollLeft}
             className="p-2 mr-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 

@@ -108,24 +108,34 @@ const Header = () => {
     <header className="sticky top-0 z-50 bg-white dark:bg-bg-dark shadow-sm">
       <div
         className={`container mx-auto px-4 ${role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN
-            ? "py-6"
-            : "py-3"
+          ? "py-6"
+          : "py-3"
           }`}
       >
         <div className="flex items-center gap-4">
           {/* Logo */}
-          <Link to={isRoleBasedPage ? (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN ? "/admin/dashboard" : "/") : "/"} className="flex items-center space-x-2">
+          <Link
+            to={isRoleBasedPage ? (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN ? "/admin/dashboard" : "/") : "/"}
+            className="flex items-center space-x-2"
+            onClick={(e) => {
+              const targetPath = isRoleBasedPage ? (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN ? "/admin/dashboard" : "/") : "/";
+              window.scrollTo(0, 0);
+              if (location.pathname === targetPath && !location.search) {
+                window.location.reload();
+              }
+            }}
+          >
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">IG</span>
             </div>
-            <span className="text-xl font-bold text-text-main dark:text-white">
+            <span className="text-xl font-bold text-text-main dark:text-white hidden sm:inline">
               InatGebeya
             </span>
           </Link>
 
           {/* Role-based Navigation */}
           {isAuthenticated && role && (
-            <nav className="flex-1 flex items-center justify-between gap-1 mx-6">
+            <nav className="flex-1 flex items-center justify-between gap-1 mx-2 lg:mx-6">
               {(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
                 <>
                   <Link
@@ -251,122 +261,127 @@ const Header = () => {
                 }`}
               ref={searchRef}
             >
-              {/* Search + button - Hide for Admins */}
+              {/* Search bar + button - Flex-1 to take remaining space */}
               {!(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
-                <form onSubmit={handleSearchSubmit} className="flex-1">
+                <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0 order-first sm:order-none">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-5 h-5" />
+                    <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4 sm:w-5 sm:h-5" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={handleSearchChange}
-                      placeholder="Search products..."
-                      className="w-full pl-10 pr-28 py-2 border border-border-default rounded-lg 
+                      placeholder="Search..."
+                      className="w-full pl-7 sm:pl-10 pr-10 sm:pr-28 py-1.5 sm:py-2 border border-border-default rounded-lg 
                        bg-white dark:bg-gray-800 dark:border-gray-700 
-                       focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                       focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-xs sm:text-base min-w-0"
                     />
                     <button
                       type="submit"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded-md 
-                               bg-primary text-white text-sm font-medium hover:bg-primary-hover"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 px-2 sm:px-4 py-1 sm:py-1.5 rounded-md 
+                               bg-primary text-white text-xs sm:text-sm font-medium hover:bg-primary-hover transition-colors"
                     >
-                      Search
+                      <span className="hidden xs:inline">Search</span>
+                      <Search className="xs:hidden w-4 h-4" />
                     </button>
                   </div>
                 </form>
               )}
 
-              {/* Filter dropdown - Hide for Admins */}
+              {/* Filter dropdown - Hidden on small screens as requested */}
               {!(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
-                <FilterDropdown
-                  onFilterChange={handleFilterChange}
-                  currentFilters={filters}
-                />
+                <div className="hidden sm:block">
+                  <FilterDropdown
+                    onFilterChange={handleFilterChange}
+                    currentFilters={filters}
+                  />
+                </div>
               )}
 
               {/* Shopping Cart - Only for guests or regular users */}
               {(!isAuthenticated || role === "user") && (
                 <Link
                   to="/cart"
-                  className="p-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 transition-colors relative"
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 transition-colors relative flex-shrink-0"
                   aria-label="Shopping Cart"
                 >
-                  <ShoppingCart className="w-5 h-5 text-text-main dark:text-white" />
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-text-main dark:text-white" />
                 </Link>
               )}
 
               {/* Dark / light toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 sm:p-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 transition-colors flex-shrink-0"
                 aria-label="Toggle theme"
               >
                 {isDarkMode ? (
-                  <Sun className="w-5 h-5 text-yellow-300" />
+                  <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
                 ) : (
-                  <Moon className="w-5 h-5 text-text-muted" />
+                  <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-text-muted" />
                 )}
               </button>
 
-              {/* Auth: login/register or user */}
-              {isAuthenticated ? (
-                <div className="relative profile-dropdown group">
-                  <button
-                    onClick={() => window.innerWidth < 1024 && setIsProfileOpen(!isProfileOpen)}
-                    onMouseEnter={() => window.innerWidth >= 1024 && setIsProfileOpen(true)}
-                    onMouseLeave={() => window.innerWidth >= 1024 && setIsProfileOpen(false)}
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-bg-light dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <User className="w-5 h-5 text-text-main dark:text-white" />
-                    <span className="hidden sm:inline text-sm font-medium text-text-main dark:text-white">
-                      {user?.full_name?.split(" ")[0] || "User"}
-                    </span>
-                    <ChevronDown className={`w-4 h-4 text-text-secondary transition-transform duration-200 ${isProfileOpen ? 'transform rotate-180' : ''}`} />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  <div
-                    className={`absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 transition-all duration-200 ease-in-out ${isProfileOpen ? 'opacity-100 visible' : 'opacity-0 invisible lg:group-hover:opacity-100 lg:group-hover:visible'
-                      }`}
-                    onMouseLeave={() => window.innerWidth >= 1024 && setIsProfileOpen(false)}
-                  >
-                    <Link
-                      to="/profile"
-                      className="flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </Link>
-                    <Link
-                      to="/orders"
-                      className="flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <Package className="w-4 h-4 mr-2" />
-                      My Orders
-                    </Link>
+              {/* Auth: login/register or user - Positioned at the end next to Dark Mode toggle */}
+              <div className="flex-shrink-0">
+                {isAuthenticated ? (
+                  <div className="relative profile-dropdown group">
                     <button
-                      onClick={() => {
-                        logout();
-                        setIsProfileOpen(false);
-                      }}
-                      className="w-full text-left flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
+                      onClick={() => window.innerWidth < 1024 && setIsProfileOpen(!isProfileOpen)}
+                      onMouseEnter={() => window.innerWidth >= 1024 && setIsProfileOpen(true)}
+                      onMouseLeave={() => window.innerWidth >= 1024 && setIsProfileOpen(false)}
+                      className="flex items-center gap-2 p-1.5 sm:p-2 rounded-lg hover:bg-bg-light dark:hover:bg-gray-700 transition-colors"
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
+                      <User className="w-5 h-5 text-text-main dark:text-white" />
+                      <span className="hidden sm:inline text-sm font-medium text-text-main dark:text-white">
+                        {user?.full_name?.split(" ")[0] || "User"}
+                      </span>
+                      <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-text-secondary transition-transform duration-200 ${isProfileOpen ? 'transform rotate-180' : ''}`} />
                     </button>
+
+                    {/* Dropdown Menu */}
+                    <div
+                      className={`absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 transition-all duration-200 ease-in-out ${isProfileOpen ? 'opacity-100 visible' : 'opacity-0 invisible lg:group-hover:opacity-100 lg:group-hover:visible'
+                        }`}
+                      onMouseLeave={() => window.innerWidth >= 1024 && setIsProfileOpen(false)}
+                    >
+                      <Link
+                        to="/profile"
+                        className="flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Profile
+                      </Link>
+                      <Link
+                        to="/orders"
+                        className="flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <Package className="w-4 h-4 mr-2" />
+                        My Orders
+                      </Link>
+                      <button
+                        onClick={() => {
+                          logout();
+                          setIsProfileOpen(false);
+                        }}
+                        className="w-full text-left flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Logout
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Link
-                  to="/login"
-                  className="flex items-center gap-2 text-sm font-medium text-text-main dark:text-white hover:text-primary"
-                >
-                  <User className="w-5 h-5" />
-                  <span className="hidden sm:inline">Login</span>
-                </Link>
-              )}
+                ) : (
+                  <Link
+                    to="/login"
+                    className="flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-0 sm:py-0 bg-primary sm:bg-transparent text-white sm:text-text-main dark:sm:text-white rounded-md text-xs sm:text-sm font-medium hover:bg-primary-hover sm:hover:text-primary transition-colors"
+                  >
+                    <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Login</span>
+                  </Link>
+                )}
+              </div>
             </div>
           )}
 

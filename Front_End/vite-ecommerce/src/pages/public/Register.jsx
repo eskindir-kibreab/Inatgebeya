@@ -236,7 +236,7 @@ const Register = () => {
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-sm text-text-muted">
+          <p className="text-sm text-text-muted dark:text-gray-500">
             By registering, you agree to receive account verification emails
           </p>
         </div>

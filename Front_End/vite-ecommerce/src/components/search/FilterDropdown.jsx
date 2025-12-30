@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, X, Sliders } from "lucide-react";
 import { categoriesAPI } from "../../api/categories.api";
 import { areasAPI } from "../../api/areas.api";
 
@@ -82,13 +82,14 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
       {/* Filter Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors
+        className={`flex items-center gap-2 px-2 sm:px-4 py-2 rounded-lg border transition-colors
                    ${hasActiveFilters()
             ? "border-primary bg-primary/10 text-primary"
-            : "border-border-default dark:border-gray-700 hover:border-primary"
+            : "border-border-default dark:border-gray-700 hover:border-primary text-text-main dark:text-gray-200"
           }`}
       >
-        <span>Filters</span>
+        <Sliders className="w-4 h-4" />
+        <span className="hidden xs:inline">Filters</span>
         <ChevronDown
           className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""
             }`}
@@ -101,7 +102,7 @@ const FilterDropdown = ({ onFilterChange, currentFilters }) => {
       {/* Filter Dropdown Panel */}
       {isOpen && (
         <div
-          className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 
+          className="absolute right-0 mt-2 w-[calc(100vw-32px)] max-w-xs sm:w-80 bg-white dark:bg-gray-800 
                       rounded-xl border border-border-default dark:border-gray-700 
                       shadow-lg z-50 animate-slide-down"
         >

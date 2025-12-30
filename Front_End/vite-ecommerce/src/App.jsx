@@ -4,6 +4,7 @@ import Header from "./components/layout/Header";
 import CategoryBar from "./components/layout/CategoryBar";
 import Footer from "./components/layout/Footer";
 import AppRoutes from "./routes/AppRoutes";
+import ScrollToTop from "./components/common/ScrollToTop";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -16,10 +17,11 @@ const AppLayout = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
+      <ScrollToTop />
       <Header />
       {showCategoryBar && <CategoryBar />}
 
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-2 sm:px-4 py-8">
         <AppRoutes />
       </main>
 

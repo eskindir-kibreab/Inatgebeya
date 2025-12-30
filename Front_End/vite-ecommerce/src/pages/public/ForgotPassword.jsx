@@ -169,7 +169,7 @@ const ForgotPassword = () => {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-bg-light dark:bg-gray-700 rounded-lg">
+          <div className="mt-6 p-4 bg-bg-light dark:bg-gray-700/50 rounded-lg border border-transparent dark:border-gray-600">
             <h3 className="font-medium text-text-main dark:text-gray-200 mb-2">
               Need help?
             </h3>

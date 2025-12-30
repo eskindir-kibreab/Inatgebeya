@@ -159,14 +159,14 @@ const ResetPassword = () => {
                 <div className="flex items-center gap-2">
                   <CheckCircle
                     className={`w-4 h-4 ${passwordRequirements.length
-                        ? "text-green-600"
-                        : "text-gray-300"
+                      ? "text-green-600"
+                      : "text-gray-300"
                       }`}
                   />
                   <span
                     className={`text-sm ${passwordRequirements.length
-                        ? "text-green-600"
-                        : "text-text-secondary"
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-text-secondary dark:text-gray-400"
                       }`}
                   >
                     At least 6 characters
@@ -175,14 +175,14 @@ const ResetPassword = () => {
                 <div className="flex items-center gap-2">
                   <CheckCircle
                     className={`w-4 h-4 ${passwordRequirements.letter
-                        ? "text-green-600"
-                        : "text-gray-300"
+                      ? "text-green-600"
+                      : "text-gray-300"
                       }`}
                   />
                   <span
                     className={`text-sm ${passwordRequirements.letter
-                        ? "text-green-600"
-                        : "text-text-secondary"
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-text-secondary dark:text-gray-400"
                       }`}
                   >
                     At least one letter
@@ -191,14 +191,14 @@ const ResetPassword = () => {
                 <div className="flex items-center gap-2">
                   <CheckCircle
                     className={`w-4 h-4 ${passwordRequirements.number
-                        ? "text-green-600"
-                        : "text-gray-300"
+                      ? "text-green-600"
+                      : "text-gray-300"
                       }`}
                   />
                   <span
                     className={`text-sm ${passwordRequirements.number
-                        ? "text-green-600"
-                        : "text-text-secondary"
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-text-secondary dark:text-gray-400"
                       }`}
                   >
                     At least one number
@@ -227,8 +227,8 @@ const ResetPassword = () => {
             {formData.confirmPassword && (
               <div
                 className={`mb-6 p-3 rounded-lg ${formData.newPassword === formData.confirmPassword
-                    ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
-                    : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                  ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                  : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
                   }`}
               >
                 <div className="flex items-center gap-2">
