@@ -120,7 +120,7 @@ const Header = () => {
 
           {/* Role-based Navigation */}
           {isAuthenticated && role && (
-            <nav className="flex items-center gap-1">
+            <nav className="flex-1 flex items-center justify-between gap-1 mx-6">
               {(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
                 <>
                   <Link
@@ -239,44 +239,56 @@ const Header = () => {
 
           {/* Search bar + button + filters + theme + auth - Only show for public/user pages */}
           {!isRoleBasedPage && (
-            <div className="flex-1 flex items-center gap-3" ref={searchRef}>
-              {/* Search + button */}
-              <form onSubmit={handleSearchSubmit} className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-5 h-5" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    placeholder="Search products..."
-                    className="w-full pl-10 pr-28 py-2 border border-border-default rounded-lg 
-                   bg-white dark:bg-gray-800 dark:border-gray-700 
-                   focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded-md 
-                             bg-primary text-white text-sm font-medium hover:bg-primary-hover"
-                  >
-                    Search
-                  </button>
-                </div>
-              </form>
+            <div
+              className={`flex-1 flex items-center gap-3 ${role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN
+                ? "justify-end"
+                : ""
+                }`}
+              ref={searchRef}
+            >
+              {/* Search + button - Hide for Admins */}
+              {!(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
+                <form onSubmit={handleSearchSubmit} className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-5 h-5" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      placeholder="Search products..."
+                      className="w-full pl-10 pr-28 py-2 border border-border-default rounded-lg 
+                       bg-white dark:bg-gray-800 dark:border-gray-700 
+                       focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded-md 
+                               bg-primary text-white text-sm font-medium hover:bg-primary-hover"
+                    >
+                      Search
+                    </button>
+                  </div>
+                </form>
+              )}
 
-              {/* Filter dropdown */}
-              <FilterDropdown
-                onFilterChange={handleFilterChange}
-                currentFilters={filters}
-              />
+              {/* Filter dropdown - Hide for Admins */}
+              {!(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
+                <FilterDropdown
+                  onFilterChange={handleFilterChange}
+                  currentFilters={filters}
+                />
+              )}
 
-              {/* Shopping Cart */}
-              <Link
-                to="/cart"
-                className="p-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 transition-colors relative"
-                aria-label="Shopping Cart"
-              >
-                <ShoppingCart className="w-5 h-5 text-text-main dark:text-white" />
-              </Link>
+              {/* Shopping Cart - Only for guests or regular users */}
+              {(!isAuthenticated || role === "user") && (
+                <Link
+                  to="/cart"
+                  className="p-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 transition-colors relative"
+                  aria-label="Shopping Cart"
+                >
+                  <ShoppingCart className="w-5 h-5 text-text-main dark:text-white" />
+                </Link>
+              )}
 
               {/* Dark / light toggle */}
               <button
@@ -347,7 +359,7 @@ const Header = () => {
                   className="flex items-center gap-2 text-sm font-medium text-text-main dark:text-white hover:text-primary"
                 >
                   <User className="w-5 h-5" />
-                  <span className="hidden sm:inline">Login / Register</span>
+                  <span className="hidden sm:inline">Login</span>
                 </Link>
               )}
             </div>
@@ -355,7 +367,7 @@ const Header = () => {
 
           {/* For role-based pages, show theme toggle and user info on the right */}
           {isRoleBasedPage && (
-            <div className="flex-1 flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-3">
               {/* Dark / light toggle */}
               <button
                 onClick={toggleTheme}
@@ -371,17 +383,58 @@ const Header = () => {
 
               {/* Auth: user */}
               {isAuthenticated && (
-                <div className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-text-main dark:text-white" />
-                  <span className="hidden sm:inline text-sm font-medium text-text-main dark:text-white">
-                    {user?.full_name?.split(" ")[0] || "User"}
-                  </span>
+                <div className="relative profile-dropdown group">
                   <button
-                    onClick={logout}
-                    className="text-sm text-text-secondary dark:text-gray-300 hover:text-primary"
+                    onClick={() =>
+                      window.innerWidth < 1024 && setIsProfileOpen(!isProfileOpen)
+                    }
+                    onMouseEnter={() =>
+                      window.innerWidth >= 1024 && setIsProfileOpen(true)
+                    }
+                    onMouseLeave={() =>
+                      window.innerWidth >= 1024 && setIsProfileOpen(false)
+                    }
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-bg-light dark:hover:bg-gray-700 transition-colors"
                   >
-                    Logout
+                    <User className="w-5 h-5 text-text-main dark:text-white" />
+                    <span className="hidden sm:inline text-sm font-medium text-text-main dark:text-white">
+                      {user?.full_name?.split(" ")[0] || "User"}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-text-secondary transition-transform duration-200 ${isProfileOpen ? "transform rotate-180" : ""
+                        }`}
+                    />
                   </button>
+
+                  {/* Dropdown Menu */}
+                  <div
+                    className={`absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 transition-all duration-200 ease-in-out ${isProfileOpen
+                      ? "opacity-100 visible"
+                      : "opacity-0 invisible lg:group-hover:opacity-100 lg:group-hover:visible"
+                      }`}
+                    onMouseLeave={() =>
+                      window.innerWidth >= 1024 && setIsProfileOpen(false)
+                    }
+                  >
+                    <Link
+                      to="/profile"
+                      className="flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsProfileOpen(false);
+                      }}
+                      className="w-full text-left flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

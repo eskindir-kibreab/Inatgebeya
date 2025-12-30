@@ -44,7 +44,10 @@ const Profile = () => {
         email: user.email || "",
         phone: user.phone || "",
       });
-      fetchOrders();
+      // Only fetch orders for regular users
+      if (user?.role?.role_name === "user") {
+        fetchOrders();
+      }
     }
   }, [user]);
 
@@ -90,13 +93,19 @@ const Profile = () => {
     return new Date(dateString).toLocaleDateString("en-ET");
   };
 
-  const tabs = [
+  const allTabs = [
     { id: "profile", label: "Profile", icon: User },
     { id: "orders", label: "Orders", icon: ShoppingBag },
     { id: "addresses", label: "Addresses", icon: MapPin },
     { id: "payment", label: "Payment", icon: CreditCard },
     { id: "settings", label: "Settings", icon: Settings },
   ];
+
+  // Filter tabs based on role
+  const tabs =
+    user?.role?.role_name === "user"
+      ? allTabs
+      : allTabs.filter((tab) => ["profile", "settings"].includes(tab.id));
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -148,11 +157,10 @@ const Profile = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg 
                               transition-colors text-left
-                              ${
-                                activeTab === tab.id
-                                  ? "bg-primary text-white"
-                                  : "text-text-secondary dark:text-gray-400 hover:bg-bg-light dark:hover:bg-gray-700"
-                              }`}
+                              ${activeTab === tab.id
+                        ? "bg-primary text-white"
+                        : "text-text-secondary dark:text-gray-400 hover:bg-bg-light dark:hover:bg-gray-700"
+                      }`}
                   >
                     <Icon className="w-5 h-5" />
                     {tab.label}
@@ -259,13 +267,12 @@ const Profile = () => {
                             </h3>
                             <span
                               className={`px-2 py-1 text-xs rounded-full capitalize
-                                           ${
-                                             order.status === "delivered"
-                                               ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                               : order.status === "cancelled"
-                                               ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                                               : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                                           }`}
+                                           ${order.status === "delivered"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                  : order.status === "cancelled"
+                                    ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                                    : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                                }`}
                             >
                               {order.status}
                             </span>

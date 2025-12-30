@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 const Input = ({
   label,
@@ -13,6 +14,14 @@ const Input = ({
   className = "",
   ...props
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="mb-4">
       {label && (
@@ -25,27 +34,44 @@ const Input = ({
         </label>
       )}
 
-      <input
-        type={type}
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        disabled={disabled}
-        className={`w-full px-4 py-3 border rounded-lg transition-colors
-                   ${
-                     error
-                       ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                       : "border-border-default dark:border-gray-700 focus:ring-accent focus:border-accent"
-                   }
-                   bg-white dark:bg-gray-800 text-text-main dark:text-gray-200
-                   disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed
-                   ${className}`}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${name}-error` : undefined}
-        {...props}
-      />
+      <div className="relative">
+        <input
+          type={inputType}
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={`w-full px-4 py-3 border rounded-lg transition-colors
+                     ${error
+              ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+              : "border-border-default dark:border-gray-700 focus:ring-accent focus:border-accent"
+            }
+                     bg-white dark:bg-gray-800 text-text-main dark:text-gray-200
+                     disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed
+                     ${isPassword ? "pr-12" : ""} 
+                     ${className}`}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${name}-error` : undefined}
+          {...props}
+        />
+
+        {isPassword && (
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
+          </button>
+        )}
+      </div>
 
       {error && (
         <p id={`${name}-error`} className="mt-1 text-sm text-red-600">
