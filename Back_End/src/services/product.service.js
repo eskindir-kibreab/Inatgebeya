@@ -97,6 +97,7 @@ export class ProductService {
         [product.product_id]
       );
       product.avg_rating = rating[0].avg_rating || 0;
+      product.average_rating = rating[0].avg_rating || 0;
       product.review_count = rating[0].review_count || 0;
     }
 
@@ -159,6 +160,7 @@ export class ProductService {
       [productId]
     );
     product.avg_rating = ratingStats[0].avg_rating || 0;
+    product.average_rating = ratingStats[0].avg_rating || 0;
     product.review_count = ratingStats[0].review_count || 0;
 
     return product;

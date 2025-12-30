@@ -59,7 +59,7 @@ const ProductCard = ({ product }) => {
 
         {/* Rating */}
         <div className="flex items-center space-x-2 mb-3">
-          <ProductRating rating={product.average_rating || 0} />
+          <ProductRating rating={product.average_rating || product.avg_rating || 0} />
           <span className="text-xs text-text-muted">
             ({product.review_count || 0})
           </span>

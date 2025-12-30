@@ -113,9 +113,9 @@ const Shop = () => {
             </div>
 
             {/* Shop Rating */}
-            {shop.average_rating > 0 && (
+            {(shop.average_rating > 0 || shop.avg_rating > 0) && (
               <div className="mt-4 flex items-center gap-2">
-                <ProductRating rating={shop.average_rating} />
+                <ProductRating rating={shop.average_rating || shop.avg_rating || 0} />
                 <span className="text-text-secondary dark:text-gray-400">
                   ({shop.review_count} reviews)
                 </span>
@@ -237,9 +237,9 @@ const Shop = () => {
             </h3>
           </div>
           <p className="text-sm text-text-secondary dark:text-gray-400">
-            {shop.average_rating > 0 ? (
+            {(shop.average_rating > 0 || shop.avg_rating > 0) ? (
               <>
-                Rated {shop.average_rating.toFixed(1)} out of 5 stars from{" "}
+                Rated {Number(shop.average_rating || shop.avg_rating || 0).toFixed(1)} out of 5 stars from{" "}
                 {shop.review_count} customer reviews.
               </>
             ) : (

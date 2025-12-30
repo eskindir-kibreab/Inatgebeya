@@ -49,6 +49,7 @@ const ProductGrid = ({
             ...p,
             id: p.id ?? p.product_id,
             average_rating: p.average_rating ?? p.avg_rating ?? 0,
+            avg_rating: p.avg_rating ?? p.average_rating ?? 0,
           }))
           : [];
 

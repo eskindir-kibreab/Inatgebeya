@@ -1,10 +1,11 @@
 import React from "react";
 import { Star, StarHalf } from "lucide-react";
 
-const ProductRating = ({ rating, size = "md" }) => {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
-  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+const ProductRating = ({ rating = 0, size = "md" }) => {
+  const numericRating = Number(rating) || 0;
+  const fullStars = Math.floor(numericRating);
+  const hasHalfStar = numericRating % 1 >= 0.5;
+  const emptyStars = Math.max(0, 5 - fullStars - (hasHalfStar ? 1 : 0));
 
   const sizeClasses = {
     sm: "w-4 h-4",
@@ -33,7 +34,7 @@ const ProductRating = ({ rating, size = "md" }) => {
       ))}
 
       <span className="ml-1 text-sm font-medium text-text-main dark:text-gray-200">
-        {rating.toFixed(1)}
+        {numericRating.toFixed(1)}
       </span>
     </div>
   );
