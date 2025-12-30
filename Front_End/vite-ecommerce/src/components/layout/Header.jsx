@@ -40,8 +40,6 @@ const Header = () => {
 
   // Debounced search for real-time results
   useEffect(() => {
-    // Only trigger if we are on the search page or if there's a valid query
-    // and prevent initial sync from triggering a new navigation if not needed
     const params = new URLSearchParams(location.search);
     const currentQ = params.get("q") || "";
 
@@ -55,7 +53,6 @@ const Header = () => {
         urlParams.delete("q");
       }
 
-      // Navigate to search page with current query
       navigate(`/search?${urlParams.toString()}`, { replace: location.pathname === "/search" });
     }, 500);
 
@@ -65,12 +62,9 @@ const Header = () => {
   // Handle click outside for mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // For mobile, close profile dropdown when clicking outside
       if (window.innerWidth < 1024 && isProfileOpen && !event.target.closest('.profile-dropdown')) {
         setIsProfileOpen(false);
       }
-
-      // Close deliveries dropdown when clicking outside (for mobile)
       if (window.innerWidth < 1024 && isDeliveriesOpen &&
         !event.target.closest('.deliveries-dropdown') &&
         !event.target.closest('.deliveries-button')) {
@@ -96,17 +90,14 @@ const Header = () => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
-
     const urlParams = new URLSearchParams();
     if (searchQuery) urlParams.set("q", searchQuery.trim());
     if (newFilters.category_id) urlParams.set("category", newFilters.category_id);
     if (newFilters.min_price) urlParams.set("min_price", newFilters.min_price);
     if (newFilters.max_price) urlParams.set("max_price", newFilters.max_price);
-
     navigate(`/search?${urlParams.toString()}`);
   };
 
-  // Check if we're on an admin page
   const isAdminPage = location.pathname.startsWith("/admin");
   const isShopOwnerPage = location.pathname.startsWith("/shop-owner");
   const isDeliveryAdminPage = location.pathname.startsWith("/delivery-admin");
@@ -116,361 +107,152 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-bg-dark shadow-sm">
-      <div
-        className={`container mx-auto px-4 ${role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN
-          ? "py-6"
-          : "py-3"
-          }`}
-      >
-        <div className="flex items-center gap-4">
+      <div className={`container mx-auto px-4 ${isRoleBasedPage ? "py-3" : "py-2"}`}>
+        <div className="flex items-center justify-between gap-4 lg:gap-8">
           {/* Logo */}
-          <Link
-            to={isRoleBasedPage ? (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN ? "/admin/dashboard" : "/") : "/"}
-            className="flex items-center space-x-2"
-            onClick={(e) => {
-              const targetPath = isRoleBasedPage ? (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN ? "/admin/dashboard" : "/") : "/";
-              window.scrollTo(0, 0);
-              if (location.pathname === targetPath && !location.search) {
-                window.location.reload();
-              }
-            }}
-          >
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">IG</span>
-            </div>
-            <span className="text-xl font-bold text-text-main dark:text-white hidden sm:inline">
-              InatGebeya
-            </span>
-          </Link>
+          <div className="flex-shrink-0">
+            <Link
+              to={isRoleBasedPage ? (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN ? "/admin/dashboard" : "/") : "/"}
+              className="flex items-center space-x-2"
+              onClick={() => {
+                const targetPath = isRoleBasedPage ? (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN ? "/admin/dashboard" : "/") : "/";
+                window.scrollTo(0, 0);
+                if (location.pathname === targetPath && !location.search) {
+                  window.location.reload();
+                }
+              }}
+            >
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                <span className="text-white font-black text-lg sm:text-xl">IG</span>
+              </div>
+              <span className="text-xl sm:text-2xl font-black text-text-main dark:text-white hidden md:inline tracking-tight">
+                InatGebeya
+              </span>
+            </Link>
+          </div>
 
-          {/* Role-based Navigation */}
-          {isAuthenticated && role && (
-            <nav className="flex-1 flex items-center justify-between gap-1 mx-2 lg:mx-6">
-              {(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
-                <>
-                  <Link
-                    to="/admin/dashboard"
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === "/admin/dashboard"
-                      ? "bg-primary text-white"
-                      : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                  >
-                    <LayoutDashboard className="w-4 h-4 inline mr-1" />
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/admin/users"
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === "/admin/users"
-                      ? "bg-primary text-white"
-                      : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                  >
-                    <Users className="w-4 h-4 inline mr-1" />
-                    Users
-                  </Link>
-                  <Link
-                    to="/admin/products"
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === "/admin/products"
-                      ? "bg-primary text-white"
-                      : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                  >
-                    <Package className="w-4 h-4 inline mr-1" />
-                    Products
-                  </Link>
-                  <Link
-                    to="/admin/categories"
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === "/admin/categories"
-                      ? "bg-primary text-white"
-                      : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                  >
-                    <FolderTree className="w-4 h-4 inline mr-1" />
-                    Categories
-                  </Link>
-                  <Link
-                    to="/admin/shops"
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === "/admin/shops"
-                      ? "bg-primary text-white"
-                      : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                  >
-                    <ShoppingBag className="w-4 h-4 inline mr-1" />
-                    Shops
-                  </Link>
-                  <Link
-                    to="/admin/areas"
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === "/admin/areas"
-                      ? "bg-primary text-white"
-                      : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                  >
-                    <MapPin className="w-4 h-4 inline mr-1" />
-                    Areas
-                  </Link>
+          {/* Center: Search (Public) or Nav (Admin) */}
+          <div className="flex-1 flex justify-center px-4 max-w-4xl mx-auto">
+            {isRoleBasedPage ? (
+              /* Role-based Navigation */
+              isAuthenticated && role && (
+                <nav className="hidden lg:flex items-center gap-1">
+                  {(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
+                    <>
+                      <Link to="/admin/dashboard" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/dashboard" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <LayoutDashboard className="w-4 h-4 inline mr-1" /> Dashboard
+                      </Link>
+                      <Link to="/admin/users" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/users" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <Users className="w-4 h-4 inline mr-1" /> Users
+                      </Link>
+                      <Link to="/admin/products" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/products" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <Package className="w-4 h-4 inline mr-1" /> Products
+                      </Link>
+                      <Link to="/admin/categories" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/categories" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <FolderTree className="w-4 h-4 inline mr-1" /> Categories
+                      </Link>
+                      <Link to="/admin/shops" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/shops" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <ShoppingBag className="w-4 h-4 inline mr-1" /> Shops
+                      </Link>
 
-                  {/* Deliveries Dropdown */}
-                  <div
-                    className="relative deliveries-dropdown group"
-                    onMouseEnter={() => window.innerWidth >= 1024 && setIsDeliveriesOpen(true)}
-                    onMouseLeave={() => window.innerWidth >= 1024 && setIsDeliveriesOpen(false)}
-                    ref={deliveriesRef}
-                  >
-                    <button
-                      onClick={() => window.innerWidth < 1024 && setIsDeliveriesOpen(!isDeliveriesOpen)}
-                      className={`deliveries-button flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname.startsWith("/admin/deliveries") ||
-                        location.pathname.startsWith("/admin/team") ||
-                        location.pathname.startsWith("/admin/assign")
-                        ? "bg-primary text-white"
-                        : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }`}
-                    >
-                      <div className="flex items-center">
-                        <Truck className="w-4 h-4 mr-1" />
-                        <span>Deliveries</span>
+                      {/* Deliveries Dropdown */}
+                      <div className="relative deliveries-dropdown group"
+                        onMouseEnter={() => window.innerWidth >= 1024 && setIsDeliveriesOpen(true)}
+                        onMouseLeave={() => window.innerWidth >= 1024 && setIsDeliveriesOpen(false)}>
+                        <button className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname.includes("/admin/deliveries") ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                          <Truck className="w-4 h-4" /> Deliveries <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <div className={`absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl py-2 z-50 border border-border-default dark:border-gray-700 transition-all ${isDeliveriesOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
+                          <Link to="/admin/team" className="block px-4 py-2 hover:bg-bg-light dark:hover:bg-gray-700">Manage Team</Link>
+                          <Link to="/admin/deliveries" className="block px-4 py-2 hover:bg-bg-light dark:hover:bg-gray-700">All Deliveries</Link>
+                        </div>
                       </div>
-                      <ChevronDown className={`w-4 h-4 ml-1 transition-transform duration-200 ${isDeliveriesOpen ? 'transform rotate-180' : ''}`} />
+                    </>
+                  )}
+                </nav>
+              )
+            ) : (
+              /* Public Search Bar - Extra Long and Centered */
+              <form onSubmit={handleSearchSubmit} className="w-full relative group hidden sm:block">
+                <div className="relative flex items-center">
+                  <Search className="absolute left-4 text-text-muted w-5 h-5 group-focus-within:text-primary transition-colors" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    placeholder="Search..."
+                    className="w-full pl-12 pr-32 py-2.5 bg-gray-50 dark:bg-gray-800/50 border-2 border-border-default 
+                             dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 
+                             focus:border-primary text-lg text-black dark:text-white transition-all shadow-sm
+                             placeholder:text-gray-400 dark:placeholder:text-gray-500 font-medium"
+                  />
+                  <div className="absolute right-1.5">
+                    <button type="submit" className="px-6 py-1.5 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover shadow-lg active:scale-95 transition-all">
+                      Search
                     </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
 
-                    {/* Dropdown Menu */}
-                    <div
-                      className={`absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700 rounded-md shadow-lg ring-1 ring-black/5 focus:outline-none z-50 transition-all duration-200 ease-in-out ${isDeliveriesOpen ? 'opacity-100 visible' : 'opacity-0 invisible lg:group-hover:opacity-100 lg:group-hover:visible'
-                        }`}
-                    >
-                      <div className="px-1 py-1">
-                        <Link
-                          to="/admin/team"
-                          className="group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
-                          onClick={() => setIsDeliveriesOpen(false)}
-                        >
-                          <Users className="w-4 h-4 mr-2" />
-                          Manage Team
-                        </Link>
-                        <Link
-                          to="/admin/deliveries"
-                          className="group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
-                          onClick={() => setIsDeliveriesOpen(false)}
-                        >
-                          <ListTodo className="w-4 h-4 mr-2" />
-                          View All Deliveries
-                        </Link>
-                      </div>
+          {/* Right: Actions */}
+          <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+            {!isRoleBasedPage && (
+              <>
+                <div className="hidden lg:block">
+                  <FilterDropdown onFilterChange={handleFilterChange} currentFilters={filters} />
+                </div>
+                {(!isAuthenticated || role === "user") && (
+                  <Link to="/cart" className="p-2 sm:p-2.5 rounded-xl hover:bg-bg-light dark:hover:bg-gray-800 transition-all relative group">
+                    <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-text-main dark:text-white group-hover:scale-110 transition-transform" />
+                  </Link>
+                )}
+              </>
+            )}
+
+            <button onClick={toggleTheme} className="p-2 sm:p-2.5 rounded-xl hover:bg-bg-light dark:hover:bg-gray-800 transition-all group">
+              {isDarkMode ? <Sun className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 group-hover:rotate-12 transition-transform" /> : <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-text-muted group-hover:-rotate-12 transition-transform" />}
+            </button>
+
+            {/* Profile */}
+            <div className="relative profile-dropdown group">
+              {isAuthenticated ? (
+                <>
+                  <button
+                    onMouseEnter={() => window.innerWidth >= 1024 && setIsProfileOpen(true)}
+                    onMouseLeave={() => window.innerWidth >= 1024 && setIsProfileOpen(false)}
+                    className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-bg-light transition-all border border-border-default dark:border-gray-700"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <User className="w-5 h-5 text-primary" />
                     </div>
+                    <span className="hidden xl:inline text-sm font-bold text-text-main dark:text-white">{user?.full_name?.split(" ")[0]}</span>
+                    <ChevronDown className="w-4 h-4 text-text-secondary" />
+                  </button>
+                  <div className={`absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl py-2 z-50 border border-border-default dark:border-gray-700 transition-all ${isProfileOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2'}`}
+                    onMouseEnter={() => setIsProfileOpen(true)}
+                    onMouseLeave={() => setIsProfileOpen(false)}>
+                    <Link to="/profile" className="block px-4 py-3 font-bold text-sm hover:bg-bg-light dark:hover:bg-gray-700">My Profile</Link>
+                    {!isRoleBasedPage && <Link to="/orders" className="block px-4 py-3 font-bold text-sm hover:bg-bg-light dark:hover:bg-gray-700">My Orders</Link>}
+                    <hr className="my-2 border-border-default dark:border-gray-700" />
+                    <button onClick={logout} className="w-full text-left px-4 py-3 font-bold text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Logout</button>
                   </div>
                 </>
-              )}
-            </nav>
-          )}
-
-          {/* Search bar + button + filters + theme + auth - Only show for public/user pages */}
-          {!isRoleBasedPage && (
-            <div
-              className={`flex-1 flex items-center gap-3 ${role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN
-                ? "justify-end"
-                : ""
-                }`}
-              ref={searchRef}
-            >
-              {/* Search bar + button - Flex-1 to take remaining space */}
-              {!(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
-                <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0 order-first sm:order-none relative">
-                  <div className="relative">
-                    <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-text-muted w-4 h-4 sm:w-5 sm:h-5" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchChange}
-                      placeholder="Search..."
-                      className="w-full pl-7 sm:pl-10 pr-10 sm:pr-28 py-1.5 sm:py-2 border border-border-default rounded-lg 
-                       bg-white dark:bg-gray-800 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-accent 
-                       focus:border-transparent text-xs sm:text-base min-w-0 text-black dark:text-white transition-all"
-                    />
-                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                      <button
-                        type="submit"
-                        className="px-2 sm:px-4 py-1 sm:py-1.5 rounded-md 
-                                 bg-primary text-white text-xs sm:text-sm font-medium hover:bg-primary-hover transition-colors"
-                      >
-                        <span className="hidden xs:inline">Search</span>
-                        <Search className="xs:hidden w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              )}
-
-              {/* Filter dropdown - Hidden on small screens as requested */}
-              {!(role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && (
-                <div className="hidden sm:block">
-                  <FilterDropdown
-                    onFilterChange={handleFilterChange}
-                    currentFilters={filters}
-                  />
-                </div>
-              )}
-
-              {/* Shopping Cart - Only for guests or regular users */}
-              {(!isAuthenticated || role === "user") && (
-                <Link
-                  to="/cart"
-                  className="p-1.5 sm:p-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 transition-colors relative flex-shrink-0"
-                  aria-label="Shopping Cart"
-                >
-                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-text-main dark:text-white" />
-                </Link>
-              )}
-
-              {/* Dark / light toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-1.5 sm:p-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 transition-colors flex-shrink-0"
-                aria-label="Toggle theme"
-              >
-                {isDarkMode ? (
-                  <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
-                ) : (
-                  <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-text-muted" />
-                )}
-              </button>
-
-              {/* Auth: login/register or user - Positioned at the end next to Dark Mode toggle */}
-              <div className="flex-shrink-0">
-                {isAuthenticated ? (
-                  <div className="relative profile-dropdown group">
-                    <button
-                      onClick={() => window.innerWidth < 1024 && setIsProfileOpen(!isProfileOpen)}
-                      onMouseEnter={() => window.innerWidth >= 1024 && setIsProfileOpen(true)}
-                      onMouseLeave={() => window.innerWidth >= 1024 && setIsProfileOpen(false)}
-                      className="flex items-center gap-2 p-1.5 sm:p-2 rounded-lg hover:bg-bg-light dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <User className="w-5 h-5 text-text-main dark:text-white" />
-                      <span className="hidden sm:inline text-sm font-medium text-text-main dark:text-white">
-                        {user?.full_name?.split(" ")[0] || "User"}
-                      </span>
-                      <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-text-secondary transition-transform duration-200 ${isProfileOpen ? 'transform rotate-180' : ''}`} />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    <div
-                      className={`absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 transition-all duration-200 ease-in-out ${isProfileOpen ? 'opacity-100 visible' : 'opacity-0 invisible lg:group-hover:opacity-100 lg:group-hover:visible'
-                        }`}
-                      onMouseLeave={() => window.innerWidth >= 1024 && setIsProfileOpen(false)}
-                    >
-                      <Link
-                        to="/profile"
-                        className="flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
-                        onClick={() => setIsProfileOpen(false)}
-                      >
-                        <User className="w-4 h-4 mr-2" />
-                        Profile
-                      </Link>
-                      <Link
-                        to="/orders"
-                        className="flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
-                        onClick={() => setIsProfileOpen(false)}
-                      >
-                        <Package className="w-4 h-4 mr-2" />
-                        My Orders
-                      </Link>
-                      <button
-                        onClick={() => {
-                          logout();
-                          setIsProfileOpen(false);
-                        }}
-                        className="w-full text-left flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Logout
-                      </button>
-                    </div>
-                  </div>
-                ) : (
+              ) : (
+                location.pathname !== "/login" && (
                   <Link
                     to="/login"
-                    className="flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-0 sm:py-0 bg-primary sm:bg-transparent text-white sm:text-text-main dark:sm:text-white rounded-md text-xs sm:text-sm font-medium hover:bg-primary-hover sm:hover:text-primary transition-colors"
+                    className="flex items-center active:scale-95 transition-all group"
                   >
-                    <User className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Login</span>
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* For role-based pages, show theme toggle and user info on the right */}
-          {isRoleBasedPage && (
-            <div className="flex items-center justify-end gap-3">
-              {/* Dark / light toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full hover:bg-bg-light dark:hover:bg-gray-700 transition-colors"
-                aria-label="Toggle theme"
-              >
-                {isDarkMode ? (
-                  <Sun className="w-5 h-5 text-yellow-300" />
-                ) : (
-                  <Moon className="w-5 h-5 text-text-muted" />
-                )}
-              </button>
-
-              {/* Auth: user */}
-              {isAuthenticated && (
-                <div className="relative profile-dropdown group">
-                  <button
-                    onClick={() =>
-                      window.innerWidth < 1024 && setIsProfileOpen(!isProfileOpen)
-                    }
-                    onMouseEnter={() =>
-                      window.innerWidth >= 1024 && setIsProfileOpen(true)
-                    }
-                    onMouseLeave={() =>
-                      window.innerWidth >= 1024 && setIsProfileOpen(false)
-                    }
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-bg-light dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <User className="w-5 h-5 text-text-main dark:text-white" />
-                    <span className="hidden sm:inline text-sm font-medium text-text-main dark:text-white">
-                      {user?.full_name?.split(" ")[0] || "User"}
+                    <span className="px-5 py-2 bg-primary text-white rounded-xl text-sm sm:text-base font-black hover:bg-primary-hover shadow-lg shadow-primary/20">
+                      Login
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-text-secondary transition-transform duration-200 ${isProfileOpen ? "transform rotate-180" : ""
-                        }`}
-                    />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  <div
-                    className={`absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 transition-all duration-200 ease-in-out ${isProfileOpen
-                      ? "opacity-100 visible"
-                      : "opacity-0 invisible lg:group-hover:opacity-100 lg:group-hover:visible"
-                      }`}
-                    onMouseLeave={() =>
-                      window.innerWidth >= 1024 && setIsProfileOpen(false)
-                    }
-                  >
-                    <Link
-                      to="/profile"
-                      className="flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </Link>
-                    <button
-                      onClick={() => {
-                        logout();
-                        setIsProfileOpen(false);
-                      }}
-                      className="w-full text-left flex items-center px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-bg-light dark:hover:bg-gray-700"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
-                    </button>
-                  </div>
-                </div>
+                  </Link>
+                )
               )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </header>

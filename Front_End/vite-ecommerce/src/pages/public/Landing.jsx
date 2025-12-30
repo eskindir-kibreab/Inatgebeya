@@ -5,12 +5,9 @@ const Landing = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   return (
-    <div className="animate-fade-in">
-      {/* Products Only Landing */}
-      <div>
-        <h2 className="text-2xl font-bold text-text-main dark:text-gray-200 mb-6">
-          Products
-        </h2>
+    <div className="animate-fade-in space-y-8 pb-12 pt-8">
+      {/* Products Section */}
+      <div className="container mx-auto">
         <ProductGrid categoryId={selectedCategory} />
       </div>
     </div>
