@@ -154,6 +154,9 @@ const Header = () => {
                       <Link to="/admin/shops" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/shops" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
                         <ShoppingBag className="w-4 h-4 inline mr-1" /> Shops
                       </Link>
+                      <Link to="/admin/areas" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/areas" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <MapPin className="w-4 h-4 inline mr-1" /> Areas
+                      </Link>
 
                       {/* Deliveries Dropdown */}
                       <div className="relative deliveries-dropdown group"
