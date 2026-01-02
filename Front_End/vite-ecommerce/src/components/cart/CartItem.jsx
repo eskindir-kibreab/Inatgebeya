@@ -1,11 +1,16 @@
 import React from "react";
 import { Trash2, Plus, Minus } from "lucide-react";
 import { useCart } from "../../context/CartContext";
+import toast from "react-hot-toast";
 
 const CartItem = ({ item }) => {
   const { updateQuantity, removeFromCart } = useCart();
 
   const handleIncrease = () => {
+    if (item.quantity >= (item.maxStock || 10)) {
+      toast.error(`Only ${item.maxStock || 10} items in stock`);
+      return;
+    }
     updateQuantity(item.id, item.quantity + 1, item.size);
   };
 

@@ -48,7 +48,7 @@ export const CartProvider = ({ children }) => {
     }
   }, [isAuthenticated, user?.id]);
 
-  const addToCart = (product, quantity = 1, size = null, sizeId = null) => {
+  const addToCart = (product, quantity = 1, size = null, sizeId = null, maxStock = null) => {
     if (!isAuthenticated) {
       // Save intended action and redirect to login
       localStorage.setItem("redirectAfterLogin", window.location.pathname);
@@ -57,16 +57,29 @@ export const CartProvider = ({ children }) => {
       return false;
     }
 
+    // Determine max available stock
+    const availableStock = maxStock !== null ? maxStock : (product.stock || 0);
+
+    if (availableStock <= 0) {
+      toast.error("This item is currently out of stock");
+      return false;
+    }
+
     setUserCarts(prev => {
       const userCart = [...(prev[user.id] || [])];
       const existingItemIndex = userCart.findIndex(
-        item => item.id === product.id && item.size === size
+        item => item.id === (product.product_id || product.id) && item.size === size
       );
 
       if (existingItemIndex > -1) {
         // Update quantity if item already exists
-        const newQuantity = userCart[existingItemIndex].quantity + quantity;
-        if (newQuantity > 10) {
+        const currentQty = userCart[existingItemIndex].quantity;
+        const newQuantity = currentQty + quantity;
+
+        if (newQuantity > availableStock) {
+          userCart[existingItemIndex].quantity = availableStock;
+          toast.error(`Only ${availableStock} items available in stock. Capped your cart at maximum.`);
+        } else if (newQuantity > 10) {
           userCart[existingItemIndex].quantity = 10;
           toast.error(`Maximum limit of 10 reached for ${product.product_name}`);
         } else {
@@ -75,11 +88,20 @@ export const CartProvider = ({ children }) => {
         }
       } else {
         // Add new item to cart
-        // Ensure initial quantity doesn't exceed 10
-        const initialQuantity = quantity > 10 ? 10 : quantity;
+        // Validate quantity against stock
+        let initialQuantity = quantity;
+        if (initialQuantity > availableStock) {
+          initialQuantity = availableStock;
+          toast.error(`Only ${availableStock} items available. Added maximum to cart.`);
+        } else if (initialQuantity > 10) {
+          initialQuantity = 10;
+          toast.error(`Capped at maximum of 10 items`);
+        } else {
+          toast.success(`Added ${product.product_name} to cart`);
+        }
 
         const newItem = {
-          id: product.product_id || product.id, // Backend uses product_id
+          id: product.product_id || product.id,
           name: product.product_name,
           price: product.price,
           image: product.main_image,
@@ -87,14 +109,10 @@ export const CartProvider = ({ children }) => {
           size,
           size_id: sizeId,
           shop_id: product.shop_id,
+          maxStock: availableStock // Store for cart page validation
         };
 
         userCart.push(newItem);
-        if (quantity > 10) {
-          toast.success(`Added ${product.product_name} (capped at 10)`);
-        } else {
-          toast.success(`Added ${product.product_name} to cart`);
-        }
       }
 
       return {
@@ -123,8 +141,19 @@ export const CartProvider = ({ children }) => {
   const updateQuantity = (itemId, quantity, size = null) => {
     if (!isAuthenticated) return;
 
+    const currentCart = userCarts[user.id] || [];
+    const item = currentCart.find(i => i.id === itemId && i.size === size);
+
+    if (!item) return;
+
     if (quantity < 1) {
       removeFromCart(itemId, size);
+      return;
+    }
+
+    // Validate against stock
+    if (quantity > item.maxStock) {
+      toast.error(`Only ${item.maxStock} items available in stock`);
       return;
     }
 

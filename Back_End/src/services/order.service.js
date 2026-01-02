@@ -158,11 +158,34 @@ export class OrderService {
           [orderId, item.product_id, item.size_id, item.quantity, item.price]
         );
 
-        // Update stock
+        // Update stock and check if out of stock
         if (item.size_id) {
           await connection.query(
             "UPDATE ProductSizes SET stock = stock - ? WHERE size_id = ?",
             [item.quantity, item.size_id]
+          );
+        } else {
+          await connection.query(
+            "UPDATE Products SET stock = stock - ? WHERE product_id = ?",
+            [item.quantity, item.product_id]
+          );
+        }
+
+        // Auto-deactivate if total stock is 0
+        const [sizeStock] = await connection.query(
+          "SELECT SUM(stock) as total_stock FROM ProductSizes WHERE product_id = ?",
+          [item.product_id]
+        );
+        const [mainStock] = await connection.query(
+          "SELECT stock FROM Products WHERE product_id = ?",
+          [item.product_id]
+        );
+
+        const totalStock = (sizeStock[0]?.total_stock || 0) + (mainStock[0]?.stock || 0);
+        if (totalStock <= 0) {
+          await connection.query(
+            "UPDATE Products SET is_active = FALSE WHERE product_id = ?",
+            [item.product_id]
           );
         }
       }

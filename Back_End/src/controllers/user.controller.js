@@ -164,59 +164,36 @@ export const updateUser = async (req, res) => {
 // Delete user (hard delete)
 export const deleteUser = async (req, res) => {
   const { id } = req.params;
-  const connection = await pool.getConnection();
 
   try {
-    await connection.beginTransaction();
-
     // Cannot delete self
     if (parseInt(id) === req.user.user_id) {
-      await connection.rollback();
       return res.status(400).json({
         success: false,
         message: "Cannot delete your own account",
       });
     }
 
-    // 1. Delete associated profiles
-    await connection.query("DELETE FROM UserCoins WHERE user_id = ?", [id]);
-    await connection.query("DELETE FROM DeliveryPersons WHERE user_id = ?", [id]);
-    await connection.query("DELETE FROM Shops WHERE owner_id = ?", [id]);
+    const affectedRows = await UserService.forceDeleteUser(id);
 
-    // 2. Delete the user record
-    const [result] = await connection.query("DELETE FROM Users WHERE user_id = ?", [id]);
-
-    if (result.affectedRows === 0) {
-      await connection.rollback();
+    if (affectedRows === 0) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
-    await connection.commit();
-
     res.json({
       success: true,
-      message: "User and all associated data deleted successfully",
+      message: "User and all associated data deleted successfully (Force Deleted)",
     });
   } catch (error) {
-    await connection.rollback();
     console.error("Delete user error:", error);
-
-    if (error.code === "ER_ROW_IS_REFERENCED_2") {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot delete user. They have active records (like orders) in the system.",
-      });
-    }
 
     res.status(500).json({
       success: false,
-      message: "Failed to delete user",
+      message: "Failed to delete user. Technical error: " + error.message,
     });
-  } finally {
-    connection.release();
   }
 };
 

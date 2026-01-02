@@ -101,7 +101,7 @@ router.put(
 // Item adder admin & admin routes
 router.post(
   "/",
-  requirePermission("item_adder_admin"),
+  requireRole("super_admin", "admin", "item_adder_admin", "shop_owner"),
   uploadSingle("main_image"),
   handleUploadError,
   productValidation,
@@ -111,7 +111,7 @@ router.post(
 router.post(
   "/:id/images",
   [param("id").isInt()],
-  requirePermission("item_adder_admin"),
+  requireRole("super_admin", "admin", "item_adder_admin", "shop_owner"),
   uploadSingle("image"),
   handleUploadError,
   addProductImage
@@ -120,7 +120,7 @@ router.post(
 router.post(
   "/:id/sizes",
   [param("id").isInt(), ...sizeValidation],
-  requirePermission("item_adder_admin"),
+  requireRole("super_admin", "admin", "item_adder_admin", "shop_owner"),
   addProductSize
 );
 
@@ -131,7 +131,7 @@ router.put(
     body("size_id").optional().isInt(),
     body("stock").isInt({ min: 0 }),
   ],
-  requirePermission("item_adder_admin"),
+  requireRole("super_admin", "admin", "item_adder_admin", "shop_owner"),
   updateProductStock
 );
 
@@ -146,7 +146,7 @@ router.put(
     body("description").optional().isString(),
     body("is_active").optional().toBoolean().isBoolean(),
   ],
-  requireRole("super_admin", "admin", "item_adder_admin"),
+  requireRole("super_admin", "admin", "item_adder_admin", "shop_owner"),
   uploadSingle("main_image"),
   handleUploadError,
   updateProduct

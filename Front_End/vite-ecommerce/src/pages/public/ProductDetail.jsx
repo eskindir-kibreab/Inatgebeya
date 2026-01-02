@@ -89,6 +89,18 @@ const ProductDetail = () => {
     }
   };
 
+  // Compute available stock for the current selection
+  const getAvailableStock = () => {
+    if (!product) return 0;
+    if (sizes.length > 0) {
+      const sizeObj = sizes.find((s) => s.size_label === selectedSize);
+      return sizeObj ? (sizeObj.stock || 0) : 0;
+    }
+    return product.stock || 0;
+  };
+
+  const currentAvailableStock = getAvailableStock();
+
   const handleAddToCart = () => {
     if (!product) return;
 
@@ -97,21 +109,49 @@ const ProductDetail = () => {
       return;
     }
 
+    const availableStock = currentAvailableStock;
+    if (availableStock <= 0) {
+      toast.error("This item is currently out of stock");
+      return;
+    }
+
+    if (quantity > availableStock) {
+      toast.error(`Only ${availableStock} items in stock. Adjusted your selection.`);
+      setQuantity(availableStock);
+      return;
+    }
+
     const sizeObj = sizes.find((s) => s.size_label === selectedSize);
-    addToCart(product, quantity, selectedSize || null, sizeObj?.id || null);
-    toast.success("Added to cart!");
+    addToCart(product, quantity, selectedSize || null, sizeObj?.id || null, availableStock);
   };
 
   const handleBuyNow = () => {
+    if (currentAvailableStock <= 0) {
+      toast.error("This item is currently out of stock");
+      return;
+    }
     handleAddToCart();
     navigate("/cart");
   };
 
   const handleQuantityChange = (change) => {
     const newQuantity = quantity + change;
-    if (newQuantity >= 1 && newQuantity <= 10) {
-      setQuantity(newQuantity);
+    const availableStock = currentAvailableStock;
+
+    if (newQuantity < 1) return;
+
+    if (newQuantity > availableStock) {
+      toast.error(`Only ${availableStock} items in stock`);
+      setQuantity(availableStock);
+      return;
     }
+
+    if (newQuantity > 10) {
+      toast.error("Maximum limit of 10 items reached");
+      return;
+    }
+
+    setQuantity(newQuantity);
   };
 
   const handleRatingSubmit = async (e) => {
@@ -326,12 +366,19 @@ const ProductDetail = () => {
                               ${selectedSize === size.size_label
                         ? "border-primary bg-primary text-white shadow-lg shadow-primary/20 scale-105"
                         : "border-border-default dark:border-gray-700 hover:border-primary/50 text-text-secondary dark:text-gray-400"
-                      }`}
+                      } ${size.stock <= 0 ? "opacity-50 grayscale" : ""}`}
                   >
-                    {size.size_label}
+                    <span className={size.stock <= 0 ? "line-through decoration-2" : ""}>
+                      {size.size_label}
+                    </span>
                     {size.stock > 0 && size.stock < 5 && (
                       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ring-2 ring-white dark:ring-gray-900">
                         Only {size.stock}
+                      </span>
+                    )}
+                    {size.stock <= 0 && (
+                      <span className="absolute -top-2 -right-2 bg-gray-500 text-white text-[8px] px-1.5 py-0.5 rounded-full ring-2 ring-white dark:ring-gray-900">
+                        Out of Stock
                       </span>
                     )}
                   </button>
@@ -364,23 +411,36 @@ const ProductDetail = () => {
               </div>
 
               <div className="flex-1 flex gap-3 w-full">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="flex-1 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 py-4 h-auto text-lg font-bold"
-                  onClick={handleAddToCart}
-                >
-                  <ShoppingCart className="w-5 h-5 mr-3" />
-                  Add to Cart
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="px-6 rounded-xl hover:bg-bg-light transition-all border-2 font-bold py-4 h-auto flex-shrink-0"
-                  onClick={handleBuyNow}
-                >
-                  Buy Now
-                </Button>
+                {(() => {
+                  const currentSize = sizes.find(s => s.size_label === selectedSize);
+                  const isOutOfStock = sizes.length > 0
+                    ? !selectedSize || (currentSize && currentSize.stock <= 0)
+                    : (product.stock || 0) <= 0;
+
+                  return (
+                    <>
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        className="flex-1 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 py-4 h-auto text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleAddToCart}
+                        disabled={isOutOfStock}
+                      >
+                        <ShoppingCart className="w-5 h-5 mr-3" />
+                        {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="px-6 rounded-xl hover:bg-bg-light transition-all border-2 font-bold py-4 h-auto flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleBuyNow}
+                        disabled={isOutOfStock}
+                      >
+                        Buy Now
+                      </Button>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
@@ -569,7 +629,7 @@ const ProductDetail = () => {
             {relatedProducts.map((p) => (
               <div
                 key={p.id || p.product_id}
-                onClick={() => navigate(`/product/${p.id || p.product_id}`)}
+                onClick={() => navigate(`/products/${p.product_id || p.id}`)}
                 className="group bg-white dark:bg-gray-800 border border-border-default 
                          dark:border-gray-700 rounded-2xl p-4 hover:shadow-2xl 
                          hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"

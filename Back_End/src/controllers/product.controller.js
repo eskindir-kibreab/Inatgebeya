@@ -24,7 +24,7 @@ export const getAllProducts = async (req, res) => {
     const result = await ProductService.getAllProducts(
       {
         category_id,
-        shop_id,
+        shop_id: req.user?.role_name === "shop_owner" ? (req.user.shop_id || -1) : shop_id,
         min_price,
         max_price,
         search,
@@ -69,6 +69,16 @@ export const getProductById = async (req, res) => {
       });
     }
 
+    // Check permissions for shop owner
+    if (req.user?.role_name === "shop_owner") {
+      if (product.shop_id !== req.user.shop_id) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have permission to view this product",
+        });
+      }
+    }
+
     res.json({
       success: true,
       data: product,
@@ -93,6 +103,16 @@ export const createProduct = async (req, res) => {
   }
 
   const { product_name, category_id, shop_id, price, description } = req.body;
+
+  // Check permissions for shop owner
+  if (req.user.role_name === "shop_owner") {
+    if (parseInt(shop_id) !== req.user.shop_id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only create products for your own shop",
+      });
+    }
+  }
 
   const main_image = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -289,6 +309,20 @@ export const updateProductStock = async (req, res) => {
     const { id } = req.params;
     const { size_id, stock } = req.body;
 
+    // Check permissions for shop owner
+    if (req.user.role_name === "shop_owner") {
+      const belongs = await ProductService.productBelongsToShop(
+        id,
+        req.user.shop_id
+      );
+      if (!belongs) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only update stock for products in your own shop",
+        });
+      }
+    }
+
     if (!stock && stock !== 0) {
       return res.status(400).json({
         success: false,
@@ -327,6 +361,20 @@ export const addProductImage = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Check permissions for shop owner
+    if (req.user.role_name === "shop_owner") {
+      const belongs = await ProductService.productBelongsToShop(
+        id,
+        req.user.shop_id
+      );
+      if (!belongs) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only add images to products in your own shop",
+        });
+      }
+    }
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -362,6 +410,20 @@ export const addProductSize = async (req, res) => {
   }
 
   const { id } = req.params;
+
+  // Check permissions for shop owner
+  if (req.user.role_name === "shop_owner") {
+    const belongs = await ProductService.productBelongsToShop(
+      id,
+      req.user.shop_id
+    );
+    if (!belongs) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only add sizes to products in your own shop",
+      });
+    }
+  }
   const { size_label, stock } = req.body;
 
   try {
@@ -456,6 +518,21 @@ export const searchProducts = async (req, res) => {
 export const getProductSizes = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Check permissions for shop owner
+    if (req.user?.role_name === "shop_owner") {
+      const belongs = await ProductService.productBelongsToShop(
+        id,
+        req.user.shop_id
+      );
+      if (!belongs) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have permission to view sizes for this product",
+        });
+      }
+    }
+
     const sizes = await ProductService.getProductSizes(id);
 
     res.json({

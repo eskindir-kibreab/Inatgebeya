@@ -49,9 +49,13 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // Ensure user is active
+    // Ensure user is active and get shop_id if they are a shop owner
     const [users] = await pool.query(
-      "SELECT u.*, r.role_name FROM Users u JOIN Roles r ON u.role_id = r.role_id WHERE u.user_id = ? AND u.is_active = TRUE",
+      `SELECT u.*, r.role_name, s.shop_id 
+       FROM Users u 
+       JOIN Roles r ON u.role_id = r.role_id 
+       LEFT JOIN Shops s ON u.user_id = s.owner_id
+       WHERE u.user_id = ? AND u.is_active = TRUE`,
       [decoded.userId]
     );
 
@@ -105,7 +109,11 @@ export const optionalAuth = async (req, res, next) => {
     }
 
     const [users] = await pool.query(
-      "SELECT u.*, r.role_name FROM Users u JOIN Roles r ON u.role_id = r.role_id WHERE u.user_id = ? AND u.is_active = TRUE",
+      `SELECT u.*, r.role_name, s.shop_id 
+       FROM Users u 
+       JOIN Roles r ON u.role_id = r.role_id 
+       LEFT JOIN Shops s ON u.user_id = s.owner_id
+       WHERE u.user_id = ? AND u.is_active = TRUE`,
       [decoded.userId]
     );
 

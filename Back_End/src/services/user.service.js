@@ -144,6 +144,101 @@ export class UserService {
     return result.affectedRows;
   }
 
+  // Force delete user (hard delete with cascading cleanup)
+  static async forceDeleteUser(userId) {
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // 1. Tokens and Resets
+      await connection.query("DELETE FROM usertokens WHERE user_id = ?", [userId]);
+      await connection.query("DELETE FROM passwordresets WHERE user_id = ?", [userId]);
+      await connection.query("DELETE FROM UserCoins WHERE user_id = ?", [userId]);
+
+      // 2. Ratings (by user)
+      await connection.query("DELETE FROM Ratings WHERE user_id = ?", [userId]);
+
+      // 3. User's Orders cleanup
+      // Delete Returns for User's OrderItems
+      await connection.query(
+        `DELETE FROM ReturnedItems WHERE order_item_id IN (
+          SELECT order_item_id FROM OrderItems WHERE order_id IN (
+            SELECT order_id FROM Orders WHERE user_id = ?
+          )
+        )`,
+        [userId]
+      );
+      // Delete OrderItems for User's Orders
+      await connection.query(
+        "DELETE FROM OrderItems WHERE order_id IN (SELECT order_id FROM Orders WHERE user_id = ?)",
+        [userId]
+      );
+      // Delete DeliveryAssignments for User's Orders
+      await connection.query(
+        "DELETE FROM DeliveryOrders WHERE order_id IN (SELECT order_id FROM Orders WHERE user_id = ?)",
+        [userId]
+      );
+      // Delete User's Orders
+      await connection.query("DELETE FROM Orders WHERE user_id = ?", [userId]);
+
+      // 4. Shop-related data (if User is a Shop Owner)
+      const [shops] = await connection.query("SELECT shop_id FROM Shops WHERE owner_id = ?", [userId]);
+      if (shops.length > 0) {
+        const shopIds = shops.map(s => s.shop_id);
+        // Delete Returns for Shop's Product's OrderItems
+        await connection.query(
+          `DELETE FROM ReturnedItems WHERE order_item_id IN (
+            SELECT order_item_id FROM OrderItems WHERE product_id IN (
+              SELECT product_id FROM Products WHERE shop_id IN (?)
+            )
+          )`,
+          [shopIds]
+        );
+        // Delete OrderItems for Shop's Products
+        await connection.query(
+          "DELETE FROM OrderItems WHERE product_id IN (SELECT product_id FROM Products WHERE shop_id IN (?))",
+          [shopIds]
+        );
+        // Delete Ratings for Shop's Products
+        await connection.query(
+          "DELETE FROM Ratings WHERE product_id IN (SELECT product_id FROM Products WHERE shop_id IN (?))",
+          [shopIds]
+        );
+        // Delete Images and Sizes
+        await connection.query(
+          "DELETE FROM ProductImages WHERE product_id IN (SELECT product_id FROM Products WHERE shop_id IN (?))",
+          [shopIds]
+        );
+        await connection.query(
+          "DELETE FROM ProductSizes WHERE product_id IN (SELECT product_id FROM Products WHERE shop_id IN (?))",
+          [shopIds]
+        );
+        // Delete Products
+        await connection.query("DELETE FROM Products WHERE shop_id IN (?)", [shopIds]);
+        // Delete Shops
+        await connection.query("DELETE FROM Shops WHERE owner_id = ?", [userId]);
+      }
+
+      // 5. Delivery Person cleanup
+      await connection.query(
+        "DELETE FROM DeliveryOrders WHERE delivery_person_id IN (SELECT delivery_person_id FROM DeliveryPersons WHERE user_id = ?)",
+        [userId]
+      );
+      await connection.query("DELETE FROM DeliveryPersons WHERE user_id = ?", [userId]);
+
+      // 6. Finally delete the user record
+      const [result] = await connection.query("DELETE FROM Users WHERE user_id = ?", [userId]);
+
+      await connection.commit();
+      return result.affectedRows;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
   // Change user role
   static async changeUserRole(userId, roleId) {
     const [result] = await pool.query(

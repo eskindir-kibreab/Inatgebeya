@@ -353,7 +353,7 @@ const ShopOwnerInventory = () => {
               ) : products.length > 0 ? (
                 products.map((product) => (
                   <tr
-                    key={product.id}
+                    key={product.product_id}
                     className="border-b border-border-default 
                                             dark:border-gray-700 hover:bg-bg-light 
                                             dark:hover:bg-gray-700"
@@ -388,7 +388,7 @@ const ShopOwnerInventory = () => {
                           defaultValue={product.stock || 0}
                           onBlur={(e) =>
                             handleUpdateStock(
-                              product.id,
+                              product.product_id,
                               parseInt(e.target.value)
                             )
                           }
@@ -411,35 +411,27 @@ const ShopOwnerInventory = () => {
                     <td className="p-6">
                       <span
                         className={`px-3 py-1 rounded-full text-sm font-medium
-                                     ${product.is_active
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                                     ${(product.stock || 0) === 0
+                            ? "bg-red-100 text-red-800 dark:bg-red-900/20"
+                            : product.is_active
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                           }`}
                       >
-                        {product.is_active ? "Active" : "Inactive"}
+                        {(product.stock || 0) === 0 ? "Out of Stock" : product.is_active ? "Active" : "Inactive"}
                       </span>
                     </td>
                     <td className="p-6">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => {
-                            setSelectedProduct(product);
-                            setFormData({
-                              product_name: product.product_name,
-                              category_id: product.category_id,
-                              price: product.price,
-                              description: product.description || "",
-                              stock: product.stock || "",
-                            });
-                            setShowEditModal(true);
-                          }}
+                          onClick={() => navigate("/coming-soon")}
                           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4 text-text-secondary" />
                         </button>
                         <button
-                          onClick={() => handleDeleteProduct(product.id)}
+                          onClick={() => navigate("/coming-soon")}
                           className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                           title="Delete"
                         >

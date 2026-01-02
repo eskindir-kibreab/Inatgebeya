@@ -41,9 +41,12 @@ export class ProductService {
       params.push(category_id);
     }
 
-    if (shop_id) {
+    if (shop_id !== undefined && shop_id !== null && shop_id !== "") {
       query += " AND p.shop_id = ?";
       params.push(shop_id);
+    } else if (shop_id === null) {
+      // Explicitly null shop_id means we want to filter by null (e.g. shop owner has no shop)
+      query += " AND p.shop_id IS NULL";
     }
 
     if (min_price) {
@@ -84,6 +87,11 @@ export class ProductService {
         [product.product_id]
       );
       product.sizes = sizes;
+
+      // If sizes exist, the main product stock should be the sum of size stocks
+      if (sizes.length > 0) {
+        product.stock = sizes.reduce((sum, s) => sum + (Number(s.stock) || 0), 0);
+      }
 
       const [images] = await pool.query(
         "SELECT image_url FROM ProductImages WHERE product_id = ?",
@@ -135,6 +143,11 @@ export class ProductService {
       [productId]
     );
     product.sizes = sizes;
+
+    // If sizes exist, the main product stock should be the sum of size stocks
+    if (sizes.length > 0) {
+      product.stock = sizes.reduce((sum, s) => sum + (Number(s.stock) || 0), 0);
+    }
 
     // Get images
     const [images] = await pool.query(
@@ -326,6 +339,25 @@ export class ProductService {
     }
 
     const [result] = await pool.query(query, params);
+
+    // After updating stock, sync is_active status
+    const [sizeStock] = await pool.query(
+      "SELECT SUM(stock) as total_stock FROM ProductSizes WHERE product_id = ?",
+      [productId]
+    );
+    const [mainStock] = await pool.query(
+      "SELECT stock FROM Products WHERE product_id = ?",
+      [productId]
+    );
+
+    const totalStock = (Number(sizeStock[0]?.total_stock) || 0) + (Number(mainStock[0]?.stock) || 0);
+
+    // If stock > 0, set active. If stock <= 0, set inactive.
+    await pool.query(
+      "UPDATE Products SET is_active = ? WHERE product_id = ?",
+      [totalStock > 0, productId]
+    );
+
     return result.affectedRows;
   }
 

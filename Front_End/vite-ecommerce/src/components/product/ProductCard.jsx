@@ -17,7 +17,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <Link
-      to={`/products/${product.id}`}
+      to={`/products/${product.product_id || product.id}`}
       className="group bg-white dark:bg-gray-800 rounded-lg border border-border-default 
                dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all 
                duration-300 hover:-translate-y-1 block"
@@ -32,19 +32,28 @@ const ProductCard = ({ product }) => {
           loading="lazy"
         />
 
+        {/* Out of Stock Badge */}
+        {(product.stock || 0) <= 0 && (
+          <div className="absolute top-4 left-4 z-10 bg-gray-600/90 text-white text-xs font-bold px-2 py-1 rounded shadow-lg uppercase tracking-wider">
+            Out of Stock
+          </div>
+        )}
+
         {/* Add to Cart Button */}
-        <button
-          onClick={handleAddToCart}
-          className="absolute bottom-4 right-4 bg-white dark:bg-gray-800 p-2 rounded-full 
-                   shadow-lg opacity-0 group-hover:opacity-100 transition-opacity 
-                   duration-200 hover:bg-accent hover:text-white"
-          aria-label="Add to cart"
-        >
-          <ShoppingBag className="w-5 h-5" />
-        </button>
+        {(product.stock || 0) > 0 && (
+          <button
+            onClick={handleAddToCart}
+            className="absolute bottom-4 right-4 bg-white dark:bg-gray-800 p-2 rounded-full 
+                     shadow-lg opacity-0 group-hover:opacity-100 transition-opacity 
+                     duration-200 hover:bg-accent hover:text-white"
+            aria-label="Add to cart"
+          >
+            <ShoppingBag className="w-5 h-5" />
+          </button>
+        )}
 
         {/* Sold Count Badge */}
-        {product.sold_count > 0 && (
+        {product.sold_count > 0 && (product.stock || 0) > 0 && (
           <div className="absolute top-4 left-4 bg-black/70 text-white text-xs px-2 py-1 rounded">
             {product.sold_count} sold
           </div>

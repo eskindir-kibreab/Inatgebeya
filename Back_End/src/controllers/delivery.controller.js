@@ -576,19 +576,15 @@ export const getDeliveryProfile = async (req, res) => {
 // Delete delivery person and associated user
 export const deleteDeliveryPerson = async (req, res) => {
   const { id } = req.params;
-  const connection = await pool.getConnection();
 
   try {
-    await connection.beginTransaction();
-
     // 1. Get user_id associated with this delivery person
-    const [dp] = await connection.query(
+    const [dp] = await pool.query(
       "SELECT user_id FROM DeliveryPersons WHERE delivery_person_id = ?",
       [id]
     );
 
     if (dp.length === 0) {
-      await connection.rollback();
       return res.status(404).json({
         success: false,
         message: "Delivery person not found",
@@ -597,40 +593,19 @@ export const deleteDeliveryPerson = async (req, res) => {
 
     const userId = dp[0].user_id;
 
-    // 2. Delete delivery person record
-    await connection.query(
-      "DELETE FROM DeliveryPersons WHERE delivery_person_id = ?",
-      [id]
-    );
-
-    // 3. Delete user record
-    // Note: This might fail if there are other FK constraints (e.g. orders)
-    // but the user requested deletion "from the database".
-    await connection.query("DELETE FROM Users WHERE user_id = ?", [userId]);
-
-    await connection.commit();
+    // 2. Perform Force Delete of the User (which also deletes the DeliveryPerson record)
+    await UserService.forceDeleteUser(userId);
 
     res.json({
       success: true,
-      message: "Delivery person and user deleted successfully",
+      message: "Delivery person and user deleted successfully (Force Deleted)",
     });
   } catch (error) {
-    await connection.rollback();
     console.error("Delete delivery person error:", error);
-
-    // Handle standard FK constraint error
-    if (error.code === "ER_ROW_IS_REFERENCED_2") {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot delete user. They have associated records (like orders) in the system.",
-      });
-    }
 
     res.status(500).json({
       success: false,
-      message: "Failed to delete delivery person",
+      message: "Failed to delete delivery person. Technical error: " + error.message,
     });
-  } finally {
-    connection.release();
   }
 };
