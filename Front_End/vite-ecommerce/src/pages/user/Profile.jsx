@@ -17,7 +17,7 @@ import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
 
 const Profile = () => {
-  const { user, logout } = useAuth();
+  const { user, role, logout, fetchUser } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const defaultProfileData = {
     full_name: "",
@@ -71,6 +71,7 @@ const Profile = () => {
     try {
       const response = await usersAPI.updateProfile(profileData);
       if (response.success) {
+        await fetchUser(); // Refresh global user state
         toast.success("Profile updated successfully");
       }
     } catch (error) {
@@ -143,7 +144,7 @@ const Profile = () => {
                 className="mt-2 px-3 py-1 bg-primary/10 text-primary text-sm 
                            rounded-full inline-block"
               >
-                {user?.role?.role_name?.replace("_", " ") || "User"}
+                {role?.replace("_", " ") || "User"}
               </div>
             </div>
 

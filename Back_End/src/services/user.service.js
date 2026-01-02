@@ -101,8 +101,21 @@ export class UserService {
     const fields = [];
     const values = [];
 
+    const validFields = [
+      "full_name",
+      "email",
+      "password_hash",
+      "phone",
+      "role_id",
+      "is_active",
+    ];
+
     Object.keys(updates).forEach((key) => {
-      if (key !== "user_id" && updates[key] !== undefined) {
+      if (
+        key !== "user_id" &&
+        updates[key] !== undefined &&
+        validFields.includes(key)
+      ) {
         fields.push(`${key} = ?`);
         values.push(updates[key]);
       }
