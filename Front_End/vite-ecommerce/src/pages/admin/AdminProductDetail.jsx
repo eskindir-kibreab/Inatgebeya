@@ -373,9 +373,17 @@ const AdminProductDetail = () => {
                         <Button
                             variant="outline"
                             className="w-full border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20"
-                            onClick={() => {
+                            onClick={async () => {
                                 if (window.confirm("Are you sure you want to delete this product?")) {
-                                    // handle delete logic
+                                    try {
+                                        const response = await productsAPI.delete(productId);
+                                        if (response.success) {
+                                            toast.success("Product deleted successfully");
+                                            navigate("/admin/products");
+                                        }
+                                    } catch (error) {
+                                        toast.error("Failed to delete product");
+                                    }
                                 }
                             }}
                         >

@@ -73,6 +73,8 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setRole(null);
       toast.success(message);
+      // Force reload to clear all states and redirect to home
+      window.location.href = "/";
     }
   };
 
