@@ -77,5 +77,10 @@ Powerful and scalable Node.js backend for the InatGebeya E-commerce platform.
 - **Order Flow:** Detailed tracking and order history management.
 - **Coin System:** User rewards/coins integration.
 
+## 📚 Developer Documentation
+
+For detailed technical specification of all available endpoints, including request and response examples, please refer to:
+👉 **[API_Documentation.md](./API_Documentation.md)**
+
 ---
 © 2026 InatGebeya Platform
