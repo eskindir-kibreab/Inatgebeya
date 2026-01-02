@@ -23,11 +23,11 @@ const Input = ({
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-3">
       {label && (
         <label
           htmlFor={name}
-          className="block text-sm font-medium text-text-main dark:text-gray-200 mb-2"
+          className="block text-sm font-medium text-text-main dark:text-gray-200 mb-1"
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
@@ -43,7 +43,7 @@ const Input = ({
           onChange={onChange}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full px-4 py-3 border rounded-lg transition-colors
+          className={`w-full px-4 py-2 border rounded-lg transition-colors
                      ${error
               ? "border-red-500 focus:ring-red-500 focus:border-red-500"
               : "border-border-default dark:border-gray-700 focus:ring-accent focus:border-accent"

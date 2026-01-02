@@ -192,12 +192,12 @@ const Profile = () => {
               className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
                            dark:border-gray-700 p-6"
             >
-              <h2 className="text-xl font-semibold text-text-main dark:text-gray-200 mb-6">
+              <h2 className="text-xl font-semibold text-text-main dark:text-gray-200 mb-4">
                 Personal Information
               </h2>
 
               <form onSubmit={handleProfileUpdate}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <Input
                     label="Full Name"
                     name="full_name"
