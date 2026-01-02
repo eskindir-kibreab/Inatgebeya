@@ -65,22 +65,36 @@ export const CartProvider = ({ children }) => {
 
       if (existingItemIndex > -1) {
         // Update quantity if item already exists
-        userCart[existingItemIndex].quantity += quantity;
-        toast.success(`Updated ${product.product_name} quantity`);
+        const newQuantity = userCart[existingItemIndex].quantity + quantity;
+        if (newQuantity > 10) {
+          userCart[existingItemIndex].quantity = 10;
+          toast.error(`Maximum limit of 10 reached for ${product.product_name}`);
+        } else {
+          userCart[existingItemIndex].quantity = newQuantity;
+          toast.success(`Updated ${product.product_name} quantity`);
+        }
       } else {
         // Add new item to cart
+        // Ensure initial quantity doesn't exceed 10
+        const initialQuantity = quantity > 10 ? 10 : quantity;
+
         const newItem = {
           id: product.product_id || product.id, // Backend uses product_id
           name: product.product_name,
           price: product.price,
           image: product.main_image,
-          quantity,
+          quantity: initialQuantity,
           size,
           size_id: sizeId,
           shop_id: product.shop_id,
         };
+
         userCart.push(newItem);
-        toast.success(`Added ${product.product_name} to cart`);
+        if (quantity > 10) {
+          toast.success(`Added ${product.product_name} (capped at 10)`);
+        } else {
+          toast.success(`Added ${product.product_name} to cart`);
+        }
       }
 
       return {
@@ -111,6 +125,11 @@ export const CartProvider = ({ children }) => {
 
     if (quantity < 1) {
       removeFromCart(itemId, size);
+      return;
+    }
+
+    if (quantity > 10) {
+      toast.error("Maximum limit of 10 items reached");
       return;
     }
 

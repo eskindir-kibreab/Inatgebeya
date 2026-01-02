@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Filter,
@@ -15,6 +16,7 @@ import Select from "../../components/forms/Select";
 import toast from "react-hot-toast";
 
 const ShopOwnerInventory = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -181,7 +183,7 @@ const ShopOwnerInventory = () => {
               Manage your shop's products and stock levels
             </p>
           </div>
-          <Button onClick={() => setShowAddModal(true)} icon={Plus}>
+          <Button onClick={() => navigate("/coming-soon")} icon={Plus}>
             Add Product
           </Button>
         </div>

@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 const CartSummary = () => {
   const { getCartTotal, getCartCount } = useCart();
   const subtotal = getCartTotal();
-  const shipping = subtotal > 500 ? 0 : 50; // Free shipping over ETB 500
+  const shipping = subtotal > 10000 ? 0 : 50; // Free shipping over ETB 10000
   const total = subtotal + shipping;
 
   return (
@@ -32,9 +32,9 @@ const CartSummary = () => {
           </span>
         </div>
 
-        {subtotal < 500 && (
+        {subtotal < 10000 && (
           <div className="text-sm text-status-success">
-            Add ETB {(500 - subtotal).toLocaleString()} more for free shipping!
+            Add ETB {(10000 - subtotal).toLocaleString()} more for free shipping!
           </div>
         )}
 

@@ -28,7 +28,7 @@ const Checkout = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const subtotal = getCartTotal();
-  const shipping = subtotal > 500 ? 0 : 50;
+  const shipping = subtotal > 10000 ? 0 : 50;
   const tax = subtotal * 0.15;
   const total = subtotal + shipping + tax;
 

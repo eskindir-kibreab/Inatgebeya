@@ -103,7 +103,6 @@ export class UserService {
 
     const validFields = [
       "full_name",
-      "email",
       "password_hash",
       "phone",
       "role_id",

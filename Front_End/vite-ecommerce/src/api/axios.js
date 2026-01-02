@@ -29,8 +29,10 @@ api.interceptors.response.use(
     const message = error.response?.data?.message || "An error occurred";
 
     if (error.response?.status === 401) {
-      sessionStorage.removeItem("token");
-      window.location.href = "/login";
+      if (window.location.pathname !== "/login") {
+        sessionStorage.removeItem("token");
+        window.location.href = "/login";
+      }
     } else {
       toast.error(message);
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   User,
   Mail,
@@ -17,6 +18,7 @@ import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const { user, role, logout, fetchUser } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const defaultProfileData = {
@@ -211,6 +213,7 @@ const Profile = () => {
                     onChange={handleChange}
                     type="email"
                     icon={Mail}
+                    disabled
                   />
 
                   <Input
@@ -289,9 +292,7 @@ const Profile = () => {
 
                         <div className="flex gap-3">
                           <button
-                            onClick={() =>
-                              (window.location.href = `/orders/${order.id}`)
-                            }
+                            onClick={() => navigate("/coming-soon")}
                             className="px-4 py-2 border border-primary text-primary 
                                      hover:bg-primary/10 rounded-lg text-sm font-medium"
                           >

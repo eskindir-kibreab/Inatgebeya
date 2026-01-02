@@ -23,7 +23,7 @@ import {
   DollarSign,
   Smartphone,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
 import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
@@ -49,6 +49,7 @@ const sortOptions = [
 ];
 
 const Orders = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -562,7 +563,7 @@ const Orders = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleViewDetails(order)}
+                        onClick={() => navigate("/coming-soon")}
                       >
                         <Info className="w-4 h-4 mr-1.5" />
                         View Details
@@ -584,12 +585,14 @@ const Orders = () => {
                       )}
 
                       {order.status?.toLowerCase() !== "cancelled" && (
-                        <Link to={`/orders/${order.order_id}/track`}>
-                          <Button variant="primary" size="sm">
-                            <Truck className="w-4 h-4 mr-1.5" />
-                            Track Order
-                          </Button>
-                        </Link>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => navigate("/coming-soon")}
+                        >
+                          <Truck className="w-4 h-4 mr-1.5" />
+                          Track Order
+                        </Button>
                       )}
 
                       {order.status?.toLowerCase() === "delivered" && (

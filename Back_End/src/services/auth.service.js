@@ -159,13 +159,18 @@ export const loginUserService = async ({ email, password }, meta = {}) => {
     `SELECT u.*, r.role_name 
      FROM Users u 
      JOIN Roles r ON u.role_id = r.role_id 
-     WHERE u.email = ? AND u.is_active = TRUE`,
+     WHERE u.email = ?`,
     [email]
   );
 
   if (users.length === 0) return { error: "Invalid email or password" };
 
   const user = users[0];
+
+  // Check if user is active
+  if (!user.is_active) {
+    return { error: "Your account has been blocked/deactivated. Please contact support." };
+  }
 
   const isValid = await bcrypt.compare(password, user.password_hash);
   if (!isValid) return { error: "Invalid email or password" };
