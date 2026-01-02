@@ -1,5 +1,5 @@
 import React from "react";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster, ToastBar } from "react-hot-toast";
 import Header from "./components/layout/Header";
 import CategoryBar from "./components/layout/CategoryBar";
 import Footer from "./components/layout/Footer";
@@ -27,6 +27,7 @@ const AppLayout = () => {
 
       <Footer />
 
+
       <Toaster
         position="top-right"
         toastOptions={{
@@ -46,7 +47,13 @@ const AppLayout = () => {
             },
           },
         }}
-      />
+      >
+        {(t) => (
+          <div onClick={() => toast.dismiss(t.id)} style={{ cursor: 'pointer' }}>
+            <ToastBar toast={t} />
+          </div>
+        )}
+      </Toaster>
     </div>
   );
 };

@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (message = "Logged out successfully") => {
     try {
       await authAPI.logout();
     } catch (error) {
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
       sessionStorage.removeItem("token");
       setUser(null);
       setRole(null);
-      toast.success("Logged out successfully");
+      toast.success(message);
     }
   };
 

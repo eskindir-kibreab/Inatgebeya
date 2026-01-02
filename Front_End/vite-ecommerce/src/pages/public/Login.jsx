@@ -60,12 +60,12 @@ const Login = () => {
       if (result.success) {
         // Check for redirectAfterLogin in localStorage
         const redirectTo = localStorage.getItem("redirectAfterLogin") || getDefaultRoute(result.role);
-        
+
         // Clear the redirectAfterLogin from localStorage
         if (localStorage.getItem("redirectAfterLogin")) {
           localStorage.removeItem("redirectAfterLogin");
         }
-        
+
         navigate(redirectTo);
       } else {
         setErrors({ general: result.message || "Login failed" });
@@ -78,115 +78,117 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 
-                         bg-primary/10 rounded-full mb-4"
-          >
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">IG</span>
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold text-text-main dark:text-gray-200">
-            Welcome Back
-          </h1>
-          <p className="text-text-secondary dark:text-gray-400 mt-2">
-            Sign in to your account to continue
-          </p>
-        </div>
-
-        <div
-          className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
-                       dark:border-gray-700 p-8"
-        >
-          {errors.general && (
+    <div className="fixed inset-0 z-[100] bg-white dark:bg-gray-900 overflow-y-auto py-12 px-4 transition-all duration-300">
+      <div className="flex items-center justify-center min-h-full">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
             <div
-              className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 
-                          dark:border-red-800 rounded-lg"
+              className="inline-flex items-center justify-center w-16 h-16 
+                         bg-primary/10 rounded-full mb-4"
             >
-              <p className="text-red-600 dark:text-red-400 text-sm">
-                {errors.general}
-              </p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <Input
-              label="Email Address"
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              error={errors.email}
-              required
-              icon={Mail}
-            />
-            <Input
-              label="Password"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              error={errors.password}
-              required
-              icon={Lock}
-            />
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  className="w-4 h-4 text-primary rounded focus:ring-primary 
-               border-border-default"
-                />
-                <label
-                  htmlFor="remember"
-                  className="ml-2 text-sm text-text-secondary dark:text-gray-400"
-                >
-                  Remember me
-                </label>
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold">IG</span>
               </div>
-
-              <Link
-                to="/forgot-password"
-                className="text-sm text-primary hover:text-primary-hover"
-              >
-                Forgot password?
-              </Link>
             </div>
-            <Button type="submit" loading={loading} fullWidth>
-              Sign In
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-text-secondary dark:text-gray-400">
-              Don't have an account?{" "}
-              <Link
-                to="/register"
-                className="text-primary hover:text-primary-hover font-medium"
-              >
-                Sign up
-              </Link>
+            <h1 className="text-3xl font-bold text-text-main dark:text-gray-200">
+              Welcome Back
+            </h1>
+            <p className="text-text-secondary dark:text-gray-400 mt-2">
+              Sign in to your account to continue
             </p>
           </div>
-        </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-sm text-text-muted">
-            By continuing, you agree to our{" "}
-            <a href="/terms" className="text-primary hover:underline">
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a href="/privacy" className="text-primary hover:underline">
-              Privacy Policy
-            </a>
-          </p>
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl border border-border-default 
+                       dark:border-gray-700 p-8 shadow-2xl dark:shadow-black/50"
+          >
+            {errors.general && (
+              <div
+                className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 
+                          dark:border-red-800 rounded-lg"
+              >
+                <p className="text-red-600 dark:text-red-400 text-sm">
+                  {errors.general}
+                </p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <Input
+                label="Email Address"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                error={errors.email}
+                required
+                icon={Mail}
+              />
+              <Input
+                label="Password"
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                error={errors.password}
+                required
+                icon={Lock}
+              />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    className="w-4 h-4 text-primary rounded focus:ring-primary 
+               border-border-default"
+                  />
+                  <label
+                    htmlFor="remember"
+                    className="ml-2 text-sm text-text-secondary dark:text-gray-400"
+                  >
+                    Remember me
+                  </label>
+                </div>
+
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-primary hover:text-primary-hover"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <Button type="submit" loading={loading} fullWidth>
+                Sign In
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-text-secondary dark:text-gray-400">
+                Don't have an account?{" "}
+                <Link
+                  to="/register"
+                  className="text-primary hover:text-primary-hover font-medium"
+                >
+                  Sign up
+                </Link>
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center">
+            <p className="text-sm text-text-muted">
+              By continuing, you agree to our{" "}
+              <a href="/terms" className="text-primary hover:underline">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="/privacy" className="text-primary hover:underline">
+                Privacy Policy
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

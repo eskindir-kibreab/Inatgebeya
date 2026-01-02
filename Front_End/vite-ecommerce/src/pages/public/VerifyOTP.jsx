@@ -165,111 +165,113 @@ const VerifyOTP = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 
+    <div className="fixed inset-0 z-[100] bg-white dark:bg-gray-900 overflow-y-auto py-12 px-4 transition-all duration-300">
+      <div className="flex items-center justify-center min-h-full">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <div
+              className="inline-flex items-center justify-center w-16 h-16 
                          bg-primary/10 rounded-full mb-4"
-          >
-            <Key className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold text-text-main dark:text-gray-200">
-            Enter OTP
-          </h1>
-          <p className="text-text-secondary dark:text-gray-400 mt-2">
-            We sent a 6-digit code to <strong>{email}</strong>
-          </p>
-        </div>
-
-        <div
-          className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
-                       dark:border-gray-700 p-8"
-        >
-          {/* Timer */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <Clock className="w-5 h-5 text-text-secondary" />
-            <span
-              className={`font-medium ${timeLeft < 60 ? "text-red-600 dark:text-red-400" : "text-text-main dark:text-gray-200"
-                }`}
             >
-              {formatTime(timeLeft)}
-            </span>
-            <span className="text-text-secondary dark:text-gray-400">
-              remaining
-            </span>
+              <Key className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold text-text-main dark:text-gray-200">
+              Enter OTP
+            </h1>
+            <p className="text-text-secondary dark:text-gray-400 mt-2">
+              We sent a 6-digit code to <strong>{email}</strong>
+            </p>
           </div>
 
-          {/* OTP Input */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-text-main dark:text-gray-200 mb-4 text-center">
-              Enter the 6-digit verification code
-            </label>
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl border border-border-default 
+                       dark:border-gray-700 p-8 shadow-2xl dark:shadow-black/50"
+          >
+            {/* Timer */}
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <Clock className="w-5 h-5 text-text-secondary" />
+              <span
+                className={`font-medium ${timeLeft < 60 ? "text-red-600 dark:text-red-400" : "text-text-main dark:text-gray-200"
+                  }`}
+              >
+                {formatTime(timeLeft)}
+              </span>
+              <span className="text-text-secondary dark:text-gray-400">
+                remaining
+              </span>
+            </div>
 
-            <div className="flex justify-center gap-2 sm:gap-3 mb-4">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => (inputRefs.current[index] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={index === 0 ? handlePaste : undefined}
-                  className="w-9 h-12 sm:w-12 sm:h-14 text-xl sm:text-2xl text-center border-2 border-border-default 
+            {/* OTP Input */}
+            <div className="mb-8">
+              <label className="block text-sm font-medium text-text-main dark:text-gray-200 mb-4 text-center">
+                Enter the 6-digit verification code
+              </label>
+
+              <div className="flex justify-center gap-2 sm:gap-3 mb-4">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onPaste={index === 0 ? handlePaste : undefined}
+                    className="w-9 h-12 sm:w-12 sm:h-14 text-xl sm:text-2xl text-center border-2 border-border-default 
                            dark:border-gray-700 rounded-lg focus:border-primary 
                            focus:ring-2 focus:ring-primary/20 bg-white
                            text-black
                            disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={loading}
-                  autoFocus={index === 0}
-                />
-              ))}
+                    disabled={loading}
+                    autoFocus={index === 0}
+                  />
+                ))}
+              </div>
+
+              <p className="text-center text-sm text-text-secondary dark:text-gray-400">
+                Didn't receive the code?{" "}
+                <button
+                  onClick={handleResendOTP}
+                  disabled={resendLoading || timeLeft > 0}
+                  className="text-primary hover:text-primary-hover disabled:opacity-50 
+                         disabled:cursor-not-allowed"
+                >
+                  {resendLoading ? "Sending..." : "Resend OTP"}
+                </button>
+              </p>
             </div>
 
-            <p className="text-center text-sm text-text-secondary dark:text-gray-400">
-              Didn't receive the code?{" "}
-              <button
-                onClick={handleResendOTP}
-                disabled={resendLoading || timeLeft > 0}
-                className="text-primary hover:text-primary-hover disabled:opacity-50 
-                         disabled:cursor-not-allowed"
-              >
-                {resendLoading ? "Sending..." : "Resend OTP"}
-              </button>
-            </p>
+            <Button
+              onClick={handleVerify}
+              loading={loading}
+              fullWidth
+              disabled={otp.join("").length !== 6}
+            >
+              Verify OTP
+            </Button>
+
+            <div className="mt-6 p-4 bg-bg-light dark:bg-gray-700 rounded-lg">
+              <h3 className="font-medium text-text-main dark:text-gray-200 mb-2">
+                Tips:
+              </h3>
+              <ul className="text-sm text-text-secondary dark:text-gray-400 space-y-1">
+                <li>• Check your spam folder if you don't see the email</li>
+                <li>• The code is case-sensitive</li>
+                <li>• Code expires in 10 minutes</li>
+              </ul>
+            </div>
           </div>
 
-          <Button
-            onClick={handleVerify}
-            loading={loading}
-            fullWidth
-            disabled={otp.join("").length !== 6}
-          >
-            Verify OTP
-          </Button>
-
-          <div className="mt-6 p-4 bg-bg-light dark:bg-gray-700 rounded-lg">
-            <h3 className="font-medium text-text-main dark:text-gray-200 mb-2">
-              Tips:
-            </h3>
-            <ul className="text-sm text-text-secondary dark:text-gray-400 space-y-1">
-              <li>• Check your spam folder if you don't see the email</li>
-              <li>• The code is case-sensitive</li>
-              <li>• Code expires in 10 minutes</li>
-            </ul>
+          <div className="mt-8 flex flex-col items-center gap-4">
+            <Link
+              to="/login"
+              className="text-sm text-primary hover:text-primary-hover"
+            >
+              Return to Login
+            </Link>
           </div>
-        </div>
-
-        <div className="mt-8 flex flex-col items-center gap-4">
-          <Link
-            to="/login"
-            className="text-sm text-primary hover:text-primary-hover"
-          >
-            Return to Login
-          </Link>
         </div>
       </div>
     </div>
