@@ -18,4 +18,10 @@ export const usersAPI = {
 
   // Change password
   changePassword: (data) => api.put("/users/profile/password", data),
+
+  // National ID
+  uploadNationalIDImage: (formData) =>
+    api.post("/users/profile/national-id-image", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
 };

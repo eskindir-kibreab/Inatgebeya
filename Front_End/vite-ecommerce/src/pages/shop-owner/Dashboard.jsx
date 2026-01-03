@@ -7,7 +7,8 @@ import {
   Package,
   Activity,
 } from "lucide-react";
-import { shopsAPI, ordersAPI, productsAPI } from "../../api";
+import { shopsAPI, ordersAPI, productsAPI, walletsAPI } from "../../api";
+import { Wallet, CreditCard, History } from "lucide-react";
 import Button from "../../components/forms/Button";
 
 const ShopOwnerDashboard = () => {
@@ -17,8 +18,9 @@ const ShopOwnerDashboard = () => {
     totalRevenue: 0,
     totalProducts: 0,
     pendingOrders: 0,
-    todayRevenue: 0,
     customerCount: 0,
+    walletBalance: 0,
+    totalEarned: 0
   });
   const [loading, setLoading] = useState(true);
   const [recentOrders, setRecentOrders] = useState([]);
@@ -54,6 +56,13 @@ const ShopOwnerDashboard = () => {
           ...new Set(orders.map((order) => order.user_id)),
         ];
 
+        // Fetch Wallet Info
+        const walletRes = await walletsAPI.getMyWallet();
+        let walletData = { balance: 0, total_earned: 0 };
+        if (walletRes.success) {
+          walletData = walletRes.data;
+        }
+
         setStats({
           totalOrders: orders.length,
           totalRevenue: orders.reduce(
@@ -61,12 +70,10 @@ const ShopOwnerDashboard = () => {
             0
           ),
           totalProducts: actualProductCount,
-          pendingOrders: orders.filter((order) => order.status === "pending")
+          pendingOrders: orders.filter((order) => order.status === "pending" || order.status === "PAID")
             .length,
-          todayRevenue: todayOrders.reduce(
-            (sum, order) => sum + (order.total_amount || 0),
-            0
-          ),
+          walletBalance: walletData.balance,
+          totalEarned: walletData.total_earned,
           customerCount: uniqueCustomers.length,
         });
 
@@ -110,18 +117,25 @@ const ShopOwnerDashboard = () => {
       change: "-2%",
     },
     {
-      title: "Today's Revenue",
-      value: `ETB ${stats.todayRevenue.toLocaleString()}`,
-      icon: TrendingUp,
+      title: "Wallet Balance",
+      value: `ETB ${stats.walletBalance.toLocaleString()}`,
+      icon: Wallet,
       color: "bg-teal-500",
-      change: "+15%",
+      change: "Available to withdraw",
+    },
+    {
+      title: "Total Earned",
+      value: `ETB ${stats.totalEarned.toLocaleString()}`,
+      icon: TrendingUp,
+      color: "bg-pink-500",
+      change: "Lifetime earnings",
     },
     {
       title: "Customers",
       value: stats.customerCount,
       icon: Users,
-      color: "bg-pink-500",
-      change: "+10%",
+      color: "bg-indigo-500",
+      change: "Unique buyers",
     },
   ];
 
@@ -167,7 +181,7 @@ const ShopOwnerDashboard = () => {
               Manage Inventory
             </Button>
             <Button
-              onClick={() => (window.location.href = "/coming-soon")}
+              onClick={() => (window.location.href = "/shop-owner/orders")}
             >
               View Orders
             </Button>
@@ -230,7 +244,9 @@ const ShopOwnerDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-medium text-text-main dark:text-gray-200">
-                        Order #{order.id}
+                        <a href={`/shop-owner/orders/${order.id || order.order_id}`} className="hover:text-primary hover:underline">
+                          Order #{order.id || order.order_id}
+                        </a>
                       </h3>
                       <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">
                         {formatDate(order.created_at)} •{" "}
@@ -273,7 +289,7 @@ const ShopOwnerDashboard = () => {
 
           <div className="p-6 border-t border-border-default dark:border-gray-700">
             <button
-              onClick={() => (window.location.href = "/coming-soon")}
+              onClick={() => (window.location.href = "/shop-owner/orders")}
               className="text-primary hover:text-primary-hover font-medium"
             >
               View All Orders →
@@ -357,7 +373,7 @@ const ShopOwnerDashboard = () => {
               </button>
 
               <button
-                onClick={() => (window.location.href = "/coming-soon")}
+                onClick={() => (window.location.href = "/shop-owner/orders")}
                 className="p-4 border border-border-default dark:border-gray-700 
                          rounded-lg hover:border-primary hover:bg-primary/5 
                          transition-colors text-center"
@@ -376,15 +392,6 @@ const ShopOwnerDashboard = () => {
                 <p className="font-medium text-sm">View Analytics</p>
               </button>
 
-              <button
-                onClick={() => (window.location.href = "/coming-soon")}
-                className="p-4 border border-border-default dark:border-gray-700 
-                         rounded-lg hover:border-primary hover:bg-primary/5 
-                         transition-colors text-center"
-              >
-                <TrendingUp className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="font-medium text-sm">Handle Returns</p>
-              </button>
             </div>
           </div>
         </div>

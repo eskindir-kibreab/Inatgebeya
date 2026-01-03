@@ -6,8 +6,6 @@ import {
   Truck,
   Shield,
   ChevronLeft,
-  Share2,
-  Heart,
   MessageSquare,
   Send,
   User as UserIcon
@@ -271,25 +269,6 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-6">
-            <button
-              className="flex-1 py-3 border border-border-default 
-                             dark:border-gray-700 rounded-xl hover:bg-gray-50 
-                             dark:hover:bg-gray-800 flex items-center justify-center gap-2 transition-colors font-medium"
-            >
-              <Heart className="w-5 h-5" />
-              Save to Wishlist
-            </button>
-            <button
-              className="flex-1 py-3 border border-border-default 
-                             dark:border-gray-700 rounded-xl hover:bg-gray-50 
-                             dark:hover:bg-gray-800 flex items-center justify-center gap-2 transition-colors font-medium"
-            >
-              <Share2 className="w-5 h-5" />
-              Share
-            </button>
-          </div>
         </div>
 
         {/* Product Info */}
@@ -318,10 +297,6 @@ const ProductDetail = () => {
                 ({product.review_count || 0} reviews)
               </span>
             </div>
-            <div className="h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
-            <span className="text-sm text-text-secondary dark:text-gray-400 font-medium">
-              🧾 {product.sold_count || 0} sold
-            </span>
           </div>
 
           {/* Price */}

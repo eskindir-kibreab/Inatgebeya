@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Edit, Trash2, UserPlus } from "lucide-react";
+import { Search, Edit, Trash2, UserPlus, Shield } from "lucide-react";
 import { usersAPI } from "../../api/users.api";
 import Input from "../../components/forms/Input";
 import Button from "../../components/forms/Button";
@@ -34,6 +34,7 @@ const Users = () => {
     role_name: "user",
     is_active: true,
   });
+  const [adminImageError, setAdminImageError] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -96,6 +97,7 @@ const Users = () => {
       role_name: user.role_name || "user",
       is_active: user.is_active,
     });
+    setAdminImageError(false); // Reset on edit
     setShowEditModal(true);
   };
 
@@ -595,6 +597,46 @@ const Users = () => {
                 }
                 options={roleOptions.slice(1)}
               />
+              {/* National ID section in Admin */}
+              {selectedUser.identification && (
+                <div className="mt-6 border-t border-border-default dark:border-gray-700 pt-4">
+                  <h3 className="text-sm font-semibold text-text-main dark:text-gray-200 mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary" />
+                    Identity Verification
+                  </h3>
+                  <div className="space-y-3">
+                    <Input
+                      label="Fan Number"
+                      value={selectedUser.identification.fan_number}
+                      disabled
+                      icon={Shield}
+                    />
+                    {selectedUser.identification.id_image_url ? (
+                      <div className="w-48 h-24 rounded-lg overflow-hidden border border-border-default dark:border-gray-700 bg-bg-light">
+                        {adminImageError ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-red-500 bg-bg-light gap-1 text-center">
+                            <Shield className="w-5 h-5 opacity-20" />
+                            <span className="text-[10px] font-bold uppercase">Image Not Found</span>
+                          </div>
+                        ) : (
+                          <img
+                            src={`${import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "")}${selectedUser.identification.id_image_url}`}
+                            alt="National ID"
+                            className="w-full h-full object-cover"
+                            onError={() => setAdminImageError(true)}
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-48 h-24 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 flex flex-col items-center justify-center text-center gap-1">
+                        <Shield className="w-5 h-5 text-orange-300 opacity-50" />
+                        <p className="text-[10px] text-orange-700 dark:text-orange-400 font-bold uppercase">No Document Uploaded</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between p-4 bg-bg-light dark:bg-gray-900 rounded-lg mt-4">
                 <div>
                   <p className="font-medium text-text-main dark:text-gray-200">User Status</p>

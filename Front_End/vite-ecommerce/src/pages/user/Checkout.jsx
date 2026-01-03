@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, CreditCard, Shield } from "lucide-react";
 import { useCart } from "../../context/CartContext";
-import { ordersAPI } from "../../api/orders.api";
+import { ordersAPI, paymentsAPI } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import Input from "../../components/forms/Input";
 import Select from "../../components/forms/Select";
 import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
-import PaymentModal from "../../components/checkout/PaymentModal";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -25,7 +24,6 @@ const Checkout = () => {
   });
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
   const [orderNote, setOrderNote] = useState("");
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const subtotal = getCartTotal();
   const shipping = subtotal > 10000 ? 0 : 50;
@@ -49,13 +47,7 @@ const Checkout = () => {
       return;
     }
 
-    // If mobile banking and not yet simulated, show modal first
-    console.log("Payment method:", paymentMethod, "isSimulatedPay:", isSimulatedPay);
-    if ((paymentMethod === 'mobile_banking' || paymentMethod === 'bank_transfer') && !isSimulatedPay) {
-      console.log("Should show payment modal!");
-      setShowPaymentModal(true);
-      return;
-    }
+    // Mobile banking now goes THROUGH Chapa initialization after order creation
 
     setLoading(true);
     try {
@@ -111,6 +103,33 @@ const Checkout = () => {
       const allSuccess = results.every((result) => result.success);
 
       if (allSuccess) {
+        // If it's a mobile banking order, we need to initialize Chapa
+        if (paymentMethod === "mobile_banking") {
+          toast.loading("Initializing secure payment...");
+          try {
+            // We assume for now the cart represents one major session, but since we split by shop,
+            // we'll initialize the first order or handle multiple. 
+            // Most marketplaces treat one checkout session as one payment.
+            // For this implementation, we take the FIRST order ID returned.
+            const firstOrderId = results[0].data.orderId;
+            const payment = await paymentsAPI.initialize(firstOrderId);
+
+            if (payment.success && payment.data.checkout_url) {
+              clearCart();
+              window.location.href = payment.data.checkout_url;
+              return; // Stop execution as we are redirecting
+            } else {
+              throw new Error("Failed to get checkout URL");
+            }
+          } catch (payError) {
+            console.error("Payment init error:", payError);
+            const errMsg = payError.response?.data?.message || "Payment initialization failed.";
+            toast.error(`Order created, but: ${errMsg}`);
+            navigate("/orders");
+            return;
+          }
+        }
+
         toast.success("Order placed successfully!");
         clearCart();
         navigate("/orders");
@@ -465,17 +484,6 @@ const Checkout = () => {
         </div>
       </div>
 
-      {/* Payment Simulation Modal */}
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        onPaymentSuccess={() => {
-          setShowPaymentModal(false);
-          handlePlaceOrder(true);
-        }}
-        amount={total}
-        method={paymentMethod}
-      />
     </div>
   );
 };

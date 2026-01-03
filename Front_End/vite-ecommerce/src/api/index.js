@@ -6,4 +6,6 @@ export * from "./categories.api";
 export * from "./areas.api";
 export * from "./orders.api";
 export * from "./delivery.api";
+export * from "./payments.api";
+export * from "./wallets.api";
 export { default as api } from "./axios";

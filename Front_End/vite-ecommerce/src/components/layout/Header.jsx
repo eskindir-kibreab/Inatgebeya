@@ -158,18 +158,25 @@ const Header = () => {
                         <MapPin className="w-4 h-4 inline mr-1" /> Areas
                       </Link>
 
-                      {/* Deliveries Dropdown */}
-                      <div className="relative deliveries-dropdown group"
-                        onMouseEnter={() => window.innerWidth >= 1024 && setIsDeliveriesOpen(true)}
-                        onMouseLeave={() => window.innerWidth >= 1024 && setIsDeliveriesOpen(false)}>
-                        <button className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname.includes("/admin/deliveries") ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
-                          <Truck className="w-4 h-4" /> Deliveries <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <div className={`absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl py-2 z-50 border border-border-default dark:border-gray-700 transition-all ${isDeliveriesOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-                          <Link to="/admin/team" className="block px-4 py-2 hover:bg-bg-light dark:hover:bg-gray-700">Manage Team</Link>
-                          <Link to="/admin/deliveries" className="block px-4 py-2 hover:bg-bg-light dark:hover:bg-gray-700">All Deliveries</Link>
-                        </div>
-                      </div>
+                      <Link to="/admin/team" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/team" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <Users className="w-4 h-4 inline mr-1" /> Delivery Team
+                      </Link>
+                      <Link to="/admin/orders" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/orders" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <ListTodo className="w-4 h-4 inline mr-1" /> Orders
+                      </Link>
+                    </>
+                  )}
+                  {role === "shop_owner" && (
+                    <>
+                      <Link to="/shop-owner/dashboard" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/shop-owner/dashboard" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <LayoutDashboard className="w-4 h-4 inline mr-1" /> Dashboard
+                      </Link>
+                      <Link to="/shop-owner/inventory" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/shop-owner/inventory" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <Package className="w-4 h-4 inline mr-1" /> Inventory
+                      </Link>
+                      <Link to="/shop-owner/orders" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/shop-owner/orders" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <ListTodo className="w-4 h-4 inline mr-1" /> Orders
+                      </Link>
                     </>
                   )}
                 </nav>
@@ -258,7 +265,7 @@ const Header = () => {
           </div>
         </div>
       </div>
-    </header>
+    </header >
   );
 };
 

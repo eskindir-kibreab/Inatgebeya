@@ -11,6 +11,9 @@ import { ordersAPI } from "../../api/orders.api";
 import { shopsAPI } from "../../api/shops.api";
 import { usersAPI } from "../../api/users.api";
 import { productsAPI } from "../../api/products.api";
+import { walletsAPI } from "../../api/wallets.api";
+import toast from "react-hot-toast";
+import { Check, X } from "lucide-react";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -20,6 +23,9 @@ const AdminDashboard = () => {
     totalShops: 0,
     revenue: 0,
     pendingOrders: 0,
+    escrowFunds: 0,
+    totalTax: 0,
+    platformCommission: 0
   });
   const [loading, setLoading] = useState(true);
   const [recentOrders, setRecentOrders] = useState([]);
@@ -33,30 +39,35 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch stats
-      const [usersRes, ordersRes, productsRes, shopsRes] = await Promise.all([
+      const [usersRes, ordersRes, productsRes, shopsRes, summaryRes] = await Promise.all([
         usersAPI.getAllUsers({ limit: 1 }),
         ordersAPI.getAll({ limit: 1 }),
         productsAPI.getAll({ limit: 1 }),
         shopsAPI.getAll({ limit: 1 }),
+        walletsAPI.getPlatformSummary()
       ]);
 
       const orders = ordersRes.data || [];
-      const pendingOrders = orders.filter(
-        (order) => order.status === "pending"
+      const pendingOrdersCount = orders.filter(
+        (order) => order.status === "pending" || order.status === "PAID"
       ).length;
-      const revenue = orders.reduce(
-        (sum, order) => sum + (order.total_amount || 0),
-        0
-      );
+
+      const summary = summaryRes?.data || {
+        revenue: { commission: 0, gateway_fee: 0 },
+        total_tax: 0,
+        escrow_funds: 0
+      };
 
       setStats({
-        totalUsers: usersRes.pagination?.total || 0,
-        totalOrders: ordersRes.pagination?.total || 0,
-        totalProducts: productsRes.pagination?.total || 0,
-        totalShops: shopsRes.pagination?.total || 0,
-        revenue,
-        pendingOrders,
+        totalUsers: usersRes.pagination?.total || usersRes.data?.length || 0,
+        totalOrders: ordersRes.pagination?.total || ordersRes.data?.length || 0,
+        totalProducts: productsRes.pagination?.total || productsRes.data?.length || 0,
+        totalShops: shopsRes.pagination?.total || shopsRes.data?.length || 0,
+        revenue: (summary.revenue?.commission || 0) + (summary.revenue?.gateway_fee || 0),
+        pendingOrders: pendingOrdersCount,
+        escrowFunds: summary.escrow_funds || 0,
+        totalTax: summary.total_tax || 0,
+        platformCommission: summary.revenue?.commission || 0
       });
 
       // Fetch recent orders
@@ -76,6 +87,19 @@ const AdminDashboard = () => {
       console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const approveOrder = async (orderId) => {
+    if (!window.confirm("Approve this order and release funds to seller wallet?")) return;
+
+    try {
+      await ordersAPI.updateStatus(orderId, { status: "approved" });
+      toast.success("Order approved and funds released!");
+      fetchDashboardData();
+    } catch (error) {
+      console.error("Error approving order:", error);
+      toast.error("Failed to approve order.");
     }
   };
 
@@ -110,18 +134,25 @@ const AdminDashboard = () => {
       change: "+8%",
     },
     {
-      title: "Total Revenue",
-      value: formatCurrency(stats.revenue),
+      title: "Platform Revenue",
+      value: formatCurrency(stats.platformCommission),
       icon: DollarSign,
       color: "bg-yellow-500",
-      change: "+18%",
+      change: "Net Profit",
     },
     {
-      title: "Pending Orders",
-      value: stats.pendingOrders,
+      title: "Escrow Funds",
+      value: formatCurrency(stats.escrowFunds),
+      icon: ShoppingBag,
+      color: "bg-orange-500",
+      change: "To be approved",
+    },
+    {
+      title: "Tax Records",
+      value: formatCurrency(stats.totalTax),
       icon: Activity,
       color: "bg-red-500",
-      change: "-5%",
+      change: "Government VAT",
     },
     {
       title: "Active Shops",
@@ -179,8 +210,8 @@ const AdminDashboard = () => {
                 </div>
                 <span
                   className={`text-sm font-medium ${stat.change.startsWith("+")
-                      ? "text-green-600"
-                      : "text-red-600"
+                    ? "text-green-600"
+                    : "text-red-600"
                     }`}
                 >
                   {stat.change}
@@ -216,28 +247,42 @@ const AdminDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-medium text-text-main dark:text-gray-200">
-                        Order #{order.id}
+                        <a href={`/admin/orders/${order.order_id}`} className="hover:text-primary hover:underline">
+                          Order #{order.order_id}
+                        </a>
                       </h3>
                       <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">
                         {formatDate(order.created_at)} •{" "}
                         {order.items?.length || 0} items
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="flex flex-col items-end gap-2">
                       <p className="font-medium text-price">
-                        ETB {order.total_amount?.toLocaleString()}
+                        ETB {order.total?.toLocaleString()}
                       </p>
-                      <span
-                        className={`inline-block mt-1 px-2 py-1 text-xs rounded-full capitalize
-                                     ${order.status === "delivered"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                            : order.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                              : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                          }`}
-                      >
-                        {order.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {order.status === "PAID" && (
+                          <button
+                            onClick={() => approveOrder(order.order_id)}
+                            className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 
+                                         rounded-lg transition-colors border border-green-200"
+                            title="Approve Order"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        )}
+                        <span
+                          className={`inline-block px-2 py-1 text-xs rounded-full capitalize
+                                         ${order.status === "delivered" || order.status === "ADMIN_APPROVED"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                              : order.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                                : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                            }`}
+                        >
+                          {order.status}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

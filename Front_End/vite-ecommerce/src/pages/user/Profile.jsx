@@ -9,6 +9,8 @@ import {
   CreditCard,
   Settings,
   LogOut,
+  Shield,
+  Upload,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { usersAPI } from "../../api/users.api";
@@ -44,6 +46,7 @@ const Profile = () => {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -118,6 +121,37 @@ const Profile = () => {
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const [uploadingID, setUploadingID] = useState(false);
+
+  const handleIDImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload a valid image file (JPG, PNG)");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("national_id_image", file);
+
+    setUploadingID(true);
+    try {
+      const response = await usersAPI.uploadNationalIDImage(formData);
+      if (response.success) {
+        setImageError(false); // Reset error state on new upload
+        await fetchUser(); // Refresh user data to show new ID image
+        toast.success("National ID image uploaded successfully");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to upload ID image");
+    } finally {
+      setUploadingID(false);
     }
   };
 
@@ -281,45 +315,150 @@ const Profile = () => {
               className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
                            dark:border-gray-700 p-6"
             >
-              <h2 className="text-xl font-semibold text-text-main dark:text-gray-200 mb-4">
-                Personal Information
-              </h2>
-
               <form onSubmit={handleProfileUpdate}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <Input
-                    label="Full Name"
-                    name="full_name"
-                    value={profileData.full_name}
-                    onChange={handleChange}
-                    icon={User}
-                    error={errors.full_name}
-                  />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  {/* Left Column: Personal Information */}
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-xl font-bold text-text-main dark:text-gray-200 mb-6 flex items-center gap-2">
+                        <User className="w-5 h-5 text-primary" />
+                        Personal Information
+                      </h2>
 
-                  <Input
-                    label="Email"
-                    name="email"
-                    value={profileData.email}
-                    onChange={handleChange}
-                    type="email"
-                    icon={Mail}
-                    disabled
-                  />
+                      <div className="space-y-4">
+                        <Input
+                          label="Full Name"
+                          name="full_name"
+                          value={profileData.full_name}
+                          onChange={handleChange}
+                          icon={User}
+                          error={errors.full_name}
+                          className="!py-1.5 !text-sm"
+                        />
 
-                  <Input
-                    label="Phone Number"
-                    name="phone"
-                    value={profileData.phone}
-                    onChange={handleChange}
-                    type="tel"
-                    icon={Phone}
-                    error={errors.phone}
-                  />
+                        <Input
+                          label="Phone Number"
+                          name="phone"
+                          value={profileData.phone}
+                          onChange={handleChange}
+                          type="tel"
+                          icon={Phone}
+                          error={errors.phone}
+                          className="!py-1.5 !text-sm"
+                        />
+
+                        <Input
+                          label="Email Address"
+                          name="email"
+                          value={profileData.email}
+                          onChange={handleChange}
+                          type="email"
+                          icon={Mail}
+                          disabled
+                          className="!py-1.5 !text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Identity Verification */}
+                  <div className="lg:border-l lg:border-border-default lg:dark:border-gray-700 lg:pl-12">
+                    <h3 className="text-xl font-bold text-text-main dark:text-gray-200 mb-6 flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-primary" />
+                      Identity Verification
+                    </h3>
+
+                    <div className="space-y-6">
+                      <div className="relative w-full max-w-md">
+                        <Input
+                          label="National ID (Fan Number)"
+                          value={user?.identification?.fan_number || "Not provided"}
+                          icon={Shield}
+                          disabled
+                          className="!py-1.5 !text-sm pr-10"
+                        />
+                        {user?.identification?.id_image_url && (
+                          <div className="absolute right-3 top-[28px] flex items-center justify-center w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full border border-green-200 dark:border-green-800" title="Verified ID">
+                            <Shield className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-sm font-semibold text-text-main dark:text-gray-200 block">
+                          National ID Document
+                        </label>
+
+                        <div className="relative">
+                          {user?.identification?.id_image_url ? (
+                            <div className="space-y-3">
+                              <div className="relative w-48 h-24 rounded-xl overflow-hidden border border-border-default dark:border-gray-700 shadow-sm bg-bg-light group">
+                                {imageError ? (
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center text-red-500 bg-gray-50 dark:bg-gray-800 gap-1 p-2 text-center">
+                                    <Shield className="w-8 h-8 opacity-20" />
+                                    <span className="text-[7px] font-bold uppercase tracking-wider">Not Found</span>
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={`${import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "")}${user.identification.id_image_url}`}
+                                    alt="National ID"
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    onError={() => setImageError(true)}
+                                  />
+                                )}
+                                {uploadingID && (
+                                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
+                                    <div className="flex flex-col items-center gap-3">
+                                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <label className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg cursor-pointer transition-all duration-300 group">
+                                <Upload className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
+                                <span className="text-[10px] font-bold uppercase">Update Document</span>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={handleIDImageUpload}
+                                  disabled={uploadingID}
+                                />
+                              </label>
+                            </div>
+                          ) : (
+                            <label className="flex flex-col items-center justify-center w-48 h-24 rounded-xl border-2 border-dashed border-border-default dark:border-gray-700 hover:border-primary hover:bg-primary/5 transition-all duration-300 cursor-pointer bg-bg-light/50 dark:bg-gray-800/50 group overflow-hidden">
+                              {uploadingID ? (
+                                <div className="flex flex-col items-center gap-3">
+                                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-3">
+                                  <Upload className="w-5 h-5 text-primary" />
+                                  <span className="text-sm font-bold text-text-main">Upload National ID</span>
+                                </div>
+                              )}
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleIDImageUpload}
+                                disabled={uploadingID}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <Button type="submit" loading={saving}>
-                  Save Changes
-                </Button>
+                <div className="mt-12 pt-6 border-t border-border-default dark:border-gray-700 flex justify-center">
+                  <Button type="submit" loading={saving} className="px-8 py-2.5">
+                    Save Changes
+                  </Button>
+                </div>
               </form>
             </div>
           )}
@@ -383,7 +522,7 @@ const Profile = () => {
 
                         <div className="flex gap-3">
                           <button
-                            onClick={() => navigate("/coming-soon")}
+                            onClick={() => navigate(`/orders/${order.id || order.order_id}`)}
                             className="px-4 py-2 border border-primary text-primary 
                                      hover:bg-primary/10 rounded-lg text-sm font-medium"
                           >
@@ -686,8 +825,8 @@ const Profile = () => {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

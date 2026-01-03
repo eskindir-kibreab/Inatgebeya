@@ -17,15 +17,18 @@ const ProductDetail = lazy(() => import("../pages/public/ProductDetail.jsx"));
 const ComingSoon = lazy(() => import("../pages/public/ComingSoon.jsx"));
 const AboutUs = lazy(() => import("../pages/public/AboutUs.jsx"));
 const PrivacyPolicy = lazy(() => import("../pages/public/PrivacyPolicy.jsx"));
-const TermsAndConditions = lazy(() => import("../pages/public/TermsAndConditions.jsx"));
+const TermsAndConditions = lazy(() =>
+  import("../pages/public/TermsAndConditions.jsx")
+);
 
 // User pages
 const Cart = lazy(() => import("../pages/user/Cart.jsx"));
 const Checkout = lazy(() => import("../pages/user/Checkout.jsx"));
-const OrderTracking = lazy(() => import("../pages/user/OrderTracking.jsx"));
+const OrderDetail = lazy(() => import("../pages/common/OrderDetail.jsx"));
 const Profile = lazy(() => import("../pages/user/Profile.jsx"));
 const Orders = lazy(() => import("../pages/user/Orders.jsx"));
 const NewOrder = lazy(() => import("../pages/user/NewOrder.jsx"));
+const PaymentSuccess = lazy(() => import("../pages/user/PaymentSuccess.jsx"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("../pages/admin/Dashboard.jsx"));
@@ -40,15 +43,21 @@ const AdminProductDetail = lazy(() =>
 );
 const AdminShops = lazy(() => import("../pages/admin/Shops.jsx"));
 const AdminAreas = lazy(() => import("../pages/admin/Areas.jsx"));
+const AdminOrders = lazy(() => import("../pages/admin/Orders.jsx"));
 
 // Shop Owner pages
 const ShopOwnerDashboard = lazy(() =>
   import("../pages/shop-owner/Dashboard.jsx")
 );
-const ShopOwnerInventory = lazy(() =>
-  import("../pages/shop-owner/Inventory.jsx")
+const ShopOwnerOrders = lazy(() =>
+  import("../pages/shop-owner/Orders.jsx")
 );
-const ShopOwnerReturns = lazy(() => import("../pages/shop-owner/Returns.jsx"));
+const ShopOwnerProducts = lazy(() =>
+  import("../pages/shop-owner/Products.jsx")
+);
+const ShopOwnerProductDetail = lazy(() =>
+  import("../pages/shop-owner/ShopProductDetail.jsx")
+);
 
 // Delivery Admin pages (keeping these for backward compatibility)
 const DeliveryAdminDashboard = lazy(() =>
@@ -148,7 +157,7 @@ const AppRoutes = () => {
           path="/orders/:orderId"
           element={
             <ProtectedRoute>
-              <OrderTracking />
+              <OrderDetail />
             </ProtectedRoute>
           }
         />
@@ -176,6 +185,14 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/checkout/success"
+          element={
+            <ProtectedRoute>
+              <PaymentSuccess />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin Routes */}
         <Route
@@ -183,6 +200,22 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute roles={["admin", "super_admin"]}>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <ProtectedRoute roles={["admin", "super_admin"]}>
+              <AdminOrders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/orders/:orderId"
+          element={
+            <ProtectedRoute roles={["admin", "super_admin"]}>
+              <OrderDetail />
             </ProtectedRoute>
           }
         />
@@ -245,6 +278,22 @@ const AppRoutes = () => {
 
         {/* Shop Owner Routes */}
         <Route
+          path="/shop-owner/orders/:orderId"
+          element={
+            <ProtectedRoute roles={["shop_owner"]}>
+              <OrderDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/shop-owner/orders"
+          element={
+            <ProtectedRoute roles={["shop_owner"]}>
+              <ShopOwnerOrders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/shop-owner/dashboard"
           element={
             <ProtectedRoute roles={["shop_owner"]}>
@@ -256,15 +305,15 @@ const AppRoutes = () => {
           path="/shop-owner/inventory"
           element={
             <ProtectedRoute roles={["shop_owner"]}>
-              <ShopOwnerInventory />
+              <ShopOwnerProducts />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/shop-owner/returns"
+          path="/shop-owner/inventory/:productId"
           element={
             <ProtectedRoute roles={["shop_owner"]}>
-              <ShopOwnerReturns />
+              <ShopOwnerProductDetail />
             </ProtectedRoute>
           }
         />

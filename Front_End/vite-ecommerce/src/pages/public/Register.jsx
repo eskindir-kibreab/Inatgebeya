@@ -11,6 +11,7 @@ const Register = () => {
     full_name: "",
     email: "",
     phone: "",
+    fan_number: "",
     password: "",
     confirmPassword: "",
   });
@@ -29,11 +30,14 @@ const Register = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.full_name.trim()) {
+    const fullName = formData.full_name.trim();
+    const nonSpaces = fullName.replace(/\s/g, "");
+
+    if (!fullName) {
       newErrors.full_name = "Full name is required";
-    } else if (formData.full_name.trim().length < 2) {
-      newErrors.full_name = "Name must be at least 2 characters";
-    } else if (!/^[a-zA-Z\s]+$/.test(formData.full_name)) {
+    } else if (!fullName.includes(" ") || nonSpaces.length < 6) {
+      newErrors.full_name = "Enter valid name";
+    } else if (!/^[a-zA-Z\s]+$/.test(fullName)) {
       newErrors.full_name = "Name must contain only letters (a-z, A-Z)";
     }
 
@@ -49,6 +53,14 @@ const Register = () => {
       } else if (formData.phone.length < 3 || formData.phone.length > 10) {
         newErrors.phone = "Phone number must be between 3 and 10 digits";
       }
+    }
+
+    if (!formData.fan_number) {
+      newErrors.fan_number = "National ID (Fan Number) is required";
+    } else if (!/^\d+$/.test(formData.fan_number)) {
+      newErrors.fan_number = "it must be number";
+    } else if (formData.fan_number.length !== 14) {
+      newErrors.fan_number = "Fan number must be exactly 14 digits";
     }
 
     if (!formData.password) {
@@ -82,6 +94,7 @@ const Register = () => {
         full_name: formData.full_name,
         email: formData.email,
         password: formData.password,
+        fan_number: formData.fan_number,
         ...(formData.phone && { phone: formData.phone }),
       };
 
@@ -175,6 +188,18 @@ const Register = () => {
                 placeholder="0912345678"
                 error={errors.phone}
                 icon={Phone}
+              />
+
+              <Input
+                label="National ID (Fan Number)"
+                type="text"
+                name="fan_number"
+                value={formData.fan_number}
+                onChange={handleChange}
+                placeholder="Ex: 12345678901234"
+                error={errors.fan_number}
+                required
+                icon={Lock}
               />
 
               <Input

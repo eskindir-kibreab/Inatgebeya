@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { ordersAPI } from "../../api/orders.api";
 import { format, parseISO } from "date-fns";
 import {
   Loader2,
@@ -22,8 +21,10 @@ import {
   CreditCard,
   DollarSign,
   Smartphone,
+  Wallet,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { ordersAPI, paymentsAPI } from "../../api";
 import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
 import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
@@ -195,6 +196,23 @@ const Orders = () => {
       toast.error("Failed to confirm receipt. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePayment = async (orderId) => {
+    try {
+      toast.loading("Initializing payment...");
+      const response = await paymentsAPI.initialize(orderId);
+      const payment = response.data;
+      if (payment.success && payment.data.checkout_url) {
+        window.location.href = payment.data.checkout_url;
+      } else {
+        toast.error("Failed to initialize payment. Please try again.");
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      const errMsg = error.response?.data?.message || "An error occurred while starting payment.";
+      toast.error(errMsg);
     }
   };
 
@@ -563,11 +581,25 @@ const Orders = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate("/coming-soon")}
+                        onClick={() => navigate(`/orders/${order.order_id || order.id}`)}
                       >
                         <Info className="w-4 h-4 mr-1.5" />
                         View Details
                       </Button>
+
+                      {order.status?.toLowerCase() === "pending" &&
+                        order.payment_method === "mobile_banking" &&
+                        order.payment_status === "pending" && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="bg-accent hover:bg-accent/90"
+                            onClick={() => handlePayment(order.order_id)}
+                          >
+                            <CreditCard className="w-4 h-4 mr-1.5" />
+                            Pay Now
+                          </Button>
+                        )}
 
                       {order.status?.toLowerCase() === "pending" && (
                         <Button
@@ -588,7 +620,7 @@ const Orders = () => {
                         <Button
                           variant="primary"
                           size="sm"
-                          onClick={() => navigate("/coming-soon")}
+                          onClick={() => navigate(`/orders/${order.order_id || order.id}`)}
                         >
                           <Truck className="w-4 h-4 mr-1.5" />
                           Track Order

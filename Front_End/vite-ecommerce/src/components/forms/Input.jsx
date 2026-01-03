@@ -9,6 +9,8 @@ const Input = ({
   onChange,
   placeholder,
   error,
+  helperText,
+  icon: Icon,
   required = false,
   disabled = false,
   className = "",
@@ -43,7 +45,7 @@ const Input = ({
           onChange={onChange}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full px-4 py-2 border rounded-lg transition-colors
+          className={`w-full ${Icon ? "pl-11" : "px-4"} py-2 border rounded-lg transition-colors
                      ${error
               ? "border-red-500 focus:ring-red-500 focus:border-red-500"
               : "border-border-default dark:border-gray-700 focus:ring-accent focus:border-accent"
@@ -56,6 +58,10 @@ const Input = ({
           aria-describedby={error ? `${name}-error` : undefined}
           {...props}
         />
+
+        {Icon && (
+          <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        )}
 
         {isPassword && (
           <button
@@ -76,6 +82,12 @@ const Input = ({
       {error && (
         <p id={`${name}-error`} className="mt-1 text-sm text-red-600">
           {error}
+        </p>
+      )}
+
+      {helperText && !error && (
+        <p className="mt-1 text-xs text-text-muted italic">
+          {helperText}
         </p>
       )}
     </div>

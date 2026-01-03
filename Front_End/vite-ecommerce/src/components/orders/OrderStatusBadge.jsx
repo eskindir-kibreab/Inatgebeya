@@ -45,6 +45,34 @@ const OrderStatusBadge = ({ status, className = "" }) => {
       textColor: "text-green-800 dark:text-green-300",
       iconColor: "text-green-600 dark:text-green-400",
     },
+    paid: {
+      icon: CheckCircle,
+      text: "Paid",
+      bgColor: "bg-green-100 dark:bg-green-900/20",
+      textColor: "text-green-800 dark:text-green-300",
+      iconColor: "text-green-600 dark:text-green-400",
+    },
+    admin_approved: {
+      icon: CheckCircle,
+      text: "Approved",
+      bgColor: "bg-blue-100 dark:bg-blue-900/20",
+      textColor: "text-blue-800 dark:text-blue-300",
+      iconColor: "text-blue-600 dark:text-blue-400",
+    },
+    delivery_assigned: {
+      icon: Truck,
+      text: "Delivery Assigned",
+      bgColor: "bg-indigo-100 dark:bg-indigo-900/20",
+      textColor: "text-indigo-800 dark:text-indigo-300",
+      iconColor: "text-indigo-600 dark:text-indigo-400",
+    },
+    picked_up: {
+      icon: Package,
+      text: "Picked Up",
+      bgColor: "bg-teal-100 dark:bg-teal-900/20",
+      textColor: "text-teal-800 dark:text-teal-300",
+      iconColor: "text-teal-600 dark:text-teal-400",
+    },
     cancelled: {
       icon: XCircle,
       text: "Cancelled",
@@ -54,7 +82,7 @@ const OrderStatusBadge = ({ status, className = "" }) => {
     },
   };
 
-  const statusKey = status?.toLowerCase() || "pending";
+  const statusKey = status?.toLowerCase()?.replace(" ", "_") || "pending";
   const config = statusConfig[statusKey] || statusConfig.pending;
   const Icon = config.icon;
 
