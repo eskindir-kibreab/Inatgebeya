@@ -36,6 +36,7 @@ const Profile = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (user) {
@@ -67,9 +68,39 @@ const Profile = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!profileData.full_name.trim()) {
+      newErrors.full_name = "Full name is required";
+    } else if (profileData.full_name.trim().length < 2) {
+      newErrors.full_name = "Name must be at least 2 characters";
+    } else if (!/^[a-zA-Z\s]+$/.test(profileData.full_name)) {
+      newErrors.full_name = "Name must contain only letters (a-z, A-Z)";
+    }
+
+    if (profileData.phone) {
+      if (!/^\d+$/.test(profileData.phone)) {
+        newErrors.phone = "Phone number must contain only digits (0-9)";
+      } else if (profileData.phone.length < 3 || profileData.phone.length > 10) {
+        newErrors.phone = "Phone number must be between 3 and 10 digits";
+      }
+    }
+
+    return newErrors;
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
+
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setSaving(true);
+    setErrors({});
     try {
       const response = await usersAPI.updateProfile(profileData);
       if (response.success) {
@@ -86,6 +117,9 @@ const Profile = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleLogout = () => {
@@ -204,6 +238,7 @@ const Profile = () => {
                     value={profileData.full_name}
                     onChange={handleChange}
                     icon={User}
+                    error={errors.full_name}
                   />
 
                   <Input
@@ -223,6 +258,7 @@ const Profile = () => {
                     onChange={handleChange}
                     type="tel"
                     icon={Phone}
+                    error={errors.phone}
                   />
                 </div>
 

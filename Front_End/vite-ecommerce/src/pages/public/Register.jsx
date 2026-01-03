@@ -31,6 +31,10 @@ const Register = () => {
 
     if (!formData.full_name.trim()) {
       newErrors.full_name = "Full name is required";
+    } else if (formData.full_name.trim().length < 2) {
+      newErrors.full_name = "Name must be at least 2 characters";
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.full_name)) {
+      newErrors.full_name = "Name must contain only letters (a-z, A-Z)";
     }
 
     if (!formData.email.trim()) {
@@ -39,8 +43,12 @@ const Register = () => {
       newErrors.email = "Email is invalid";
     }
 
-    if (formData.phone && !/^[0-9]{10,15}$/.test(formData.phone)) {
-      newErrors.phone = "Phone number must be 10-15 digits";
+    if (formData.phone) {
+      if (!/^\d+$/.test(formData.phone)) {
+        newErrors.phone = "Phone number must contain only digits (0-9)";
+      } else if (formData.phone.length < 3 || formData.phone.length > 10) {
+        newErrors.phone = "Phone number must be between 3 and 10 digits";
+      }
     }
 
     if (!formData.password) {

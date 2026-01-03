@@ -7,7 +7,7 @@ import {
   Package,
   Activity,
 } from "lucide-react";
-import { shopsAPI, ordersAPI } from "../../api";
+import { shopsAPI, ordersAPI, productsAPI } from "../../api";
 import Button from "../../components/forms/Button";
 
 const ShopOwnerDashboard = () => {
@@ -40,6 +40,10 @@ const ShopOwnerDashboard = () => {
         const ordersRes = await ordersAPI.getShopOrders({ limit: 100 });
         const orders = ordersRes.data || [];
 
+        // Fetch accurate total products count
+        const productsRes = await productsAPI.getAll({ shop_owner: true, limit: 1 });
+        const actualProductCount = productsRes.pagination?.total || 0;
+
         // Calculate stats
         const today = new Date().toDateString();
         const todayOrders = orders.filter(
@@ -56,7 +60,7 @@ const ShopOwnerDashboard = () => {
             (sum, order) => sum + (order.total_amount || 0),
             0
           ),
-          totalProducts: shopRes.data.product_count || 0,
+          totalProducts: actualProductCount,
           pendingOrders: orders.filter((order) => order.status === "pending")
             .length,
           todayRevenue: todayOrders.reduce(
