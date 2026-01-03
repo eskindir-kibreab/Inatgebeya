@@ -33,10 +33,17 @@ const Profile = () => {
   };
 
   const [profileData, setProfileData] = useState(defaultProfileData);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [passwordErrors, setPasswordErrors] = useState({});
 
   useEffect(() => {
     if (user) {
@@ -108,9 +115,57 @@ const Profile = () => {
         toast.success("Profile updated successfully");
       }
     } catch (error) {
-      toast.error("Failed to update profile");
+      toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    const newErrors = {};
+
+    if (!passwordData.currentPassword) {
+      newErrors.currentPassword = "Current password is required";
+    }
+    if (!passwordData.newPassword) {
+      newErrors.newPassword = "New password is required";
+    } else if (passwordData.newPassword.length < 6) {
+      newErrors.newPassword = "Password must be at least 6 characters";
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setPasswordErrors(newErrors);
+      return;
+    }
+
+    setPasswordSaving(true);
+    setPasswordErrors({});
+    try {
+      const response = await usersAPI.changePassword(passwordData);
+      if (response.success) {
+        toast.success("Password updated successfully");
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update password");
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+    if (passwordErrors[name]) {
+      setPasswordErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -571,24 +626,38 @@ const Profile = () => {
                   <h3 className="font-medium text-text-main dark:text-gray-200 mb-4">
                     Change Password
                   </h3>
-                  <div className="space-y-4">
+                  <form onSubmit={handlePasswordUpdate} className="space-y-4">
                     <Input
                       label="Current Password"
+                      name="currentPassword"
                       type="password"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
                       placeholder="Enter current password"
+                      error={passwordErrors.currentPassword}
                     />
                     <Input
                       label="New Password"
+                      name="newPassword"
                       type="password"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
                       placeholder="Enter new password"
+                      error={passwordErrors.newPassword}
                     />
                     <Input
                       label="Confirm New Password"
+                      name="confirmPassword"
                       type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
                       placeholder="Confirm new password"
+                      error={passwordErrors.confirmPassword}
                     />
-                    <Button>Update Password</Button>
-                  </div>
+                    <Button type="submit" loading={passwordSaving}>
+                      Update Password
+                    </Button>
+                  </form>
                 </div>
 
                 {/* Account Actions */}

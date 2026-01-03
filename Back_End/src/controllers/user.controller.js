@@ -256,6 +256,8 @@ export const updateProfile = async (req, res) => {
     delete updates.role_name;
     delete updates.is_active;
     delete updates.role_id;
+    delete updates.password;
+    delete updates.password_hash;
 
     // Check if email already exists
     if (updates.email && updates.email !== req.user.email) {
@@ -266,12 +268,6 @@ export const updateProfile = async (req, res) => {
           message: "Email already in use",
         });
       }
-    }
-
-    // If password is being updated, hash it
-    if (updates.password) {
-      updates.password_hash = await bcrypt.hash(updates.password, 10);
-      delete updates.password;
     }
 
     const affectedRows = await UserService.updateUser(userId, updates);
@@ -292,6 +288,63 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to update profile",
+    });
+  }
+};
+
+// Change own password
+export const changePassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      errors: errors.array(),
+    });
+  }
+
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user.user_id;
+
+  try {
+    // Get user with password hash
+    const [users] = await pool.query(
+      "SELECT password_hash FROM Users WHERE user_id = ?",
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const user = users[0];
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect current password",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await UserService.updateUser(userId, { password_hash: hashedPassword });
+
+    res.json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update password",
     });
   }
 };

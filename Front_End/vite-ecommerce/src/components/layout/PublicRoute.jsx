@@ -14,15 +14,20 @@ import { ROLES } from "../../utils/constants";
  * route (like Login/Register), it triggers a logout for security.
  */
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, role, loading, logout } = useAuth();
+  const { isAuthenticated, role, loading, logout, navCount } = useAuth();
   const navigationType = useNavigationType();
 
   useEffect(() => {
-    // If authenticated and the user hits the "Back" button (POP) to get to a public route
-    if (isAuthenticated && navigationType === "POP") {
+    // Only sensitive pages should trigger logout on "Back" navigation
+    const sensitivePages = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-otp'];
+    const isSensitivePage = sensitivePages.some(path => window.location.pathname.includes(path));
+
+    // If authenticated and the user hits the "Back" button (POP) to get to a sensitive public route
+    // But ONLY if it's not the initial load/refresh (navCount > 1)
+    if (isAuthenticated && navigationType === "POP" && isSensitivePage && navCount > 1) {
       logout("Please login again");
     }
-  }, [isAuthenticated, navigationType, logout]);
+  }, [isAuthenticated, navigationType, logout, navCount]);
 
   if (loading) {
     return <PageLoader />;

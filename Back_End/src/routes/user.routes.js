@@ -8,6 +8,7 @@ import {
   deleteUser,
   changeUserRole,
   updateProfile,
+  changePassword,
   getCurrentUser,
 } from "../controllers/user.controller.js";
 import {
@@ -35,12 +36,24 @@ const createUserValidation = [
   ]),
 ];
 
-// Profile update validation
 const updateProfileValidation = [
   body("full_name").optional().notEmpty(),
   body("email").optional().isEmail(),
   body("phone").optional().isMobilePhone(),
-  body("password").optional().isLength({ min: 6 }),
+];
+
+const changePasswordValidation = [
+  body("currentPassword").notEmpty().withMessage("Current password is required"),
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("New password must be at least 6 characters"),
+  body("confirmPassword")
+    .custom((value, { req }) => {
+      if (value !== req.body.newPassword) {
+        throw new Error("Password confirmation does not match new password");
+      }
+      return true;
+    }),
 ];
 
 // All routes require authentication
@@ -51,6 +64,9 @@ router.get("/profile", getCurrentUser);
 
 // Update my profile
 router.put("/profile", updateProfileValidation, updateProfile);
+
+// Change my password
+router.put("/profile/password", changePasswordValidation, changePassword);
 
 // Admin routes - Get all users
 router.get(

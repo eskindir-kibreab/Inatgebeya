@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { authAPI } from "../api/auth.api";
 import toast from "react-hot-toast";
 
@@ -10,6 +11,13 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState(null);
+  const [navCount, setNavCount] = useState(0);
+  const location = useLocation();
+
+  // Track navigation count to distinguish between initial load/refresh and back button
+  useEffect(() => {
+    setNavCount(prev => prev + 1);
+  }, [location.pathname]);
 
   useEffect(() => {
     const token = sessionStorage.getItem("token");
@@ -87,6 +95,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     isAuthenticated: !!user,
     fetchUser,
+    navCount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

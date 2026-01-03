@@ -15,4 +15,7 @@ export const usersAPI = {
   deleteUser: (id) => api.delete(`/users/${id}`),
   updateUserRole: (id, roleName) =>
     api.put(`/users/${id}/role`, { role_name: roleName }),
+
+  // Change password
+  changePassword: (data) => api.put("/users/profile/password", data),
 };
