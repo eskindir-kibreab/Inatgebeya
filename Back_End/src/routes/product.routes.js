@@ -32,7 +32,7 @@ const productValidation = [
   body("product_name").notEmpty().withMessage("Product name is required"),
   body("category_id").isInt().withMessage("Valid category ID is required"),
   body("shop_id").isInt().withMessage("Valid shop ID is required"),
-  body("price").isFloat({ min: 0 }).withMessage("Valid price is required"),
+  body("price").isFloat({ gt: 0 }).withMessage("The price must be a positive number"),
   body("description").optional().isString(),
 ];
 
@@ -142,7 +142,7 @@ router.put(
     param("id").isInt(),
     body("product_name").optional().notEmpty(),
     body("category_id").optional().isInt(),
-    body("price").optional().isFloat({ min: 0 }),
+    body("price").optional().isFloat({ gt: 0 }).withMessage("The price must be a positive number"),
     body("description").optional().isString(),
     body("is_active").optional().toBoolean().isBoolean(),
   ],

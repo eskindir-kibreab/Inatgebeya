@@ -198,6 +198,11 @@ const Products = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
 
+    if (parseFloat(formData.price) <= 0) {
+      toast.error("The price must be a positive number");
+      return;
+    }
+
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
       if (formData[key] !== null && formData[key] !== "") {

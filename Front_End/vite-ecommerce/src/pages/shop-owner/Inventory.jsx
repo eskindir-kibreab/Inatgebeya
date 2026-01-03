@@ -82,6 +82,11 @@ const ShopOwnerInventory = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
 
+    if (parseFloat(formData.price) <= 0) {
+      toast.error("The price must be a positive number");
+      return;
+    }
+
     try {
       // In a real app, you would use the productsAPI.create method
       // with the shop_id automatically set to the owner's shop
@@ -97,6 +102,11 @@ const ShopOwnerInventory = () => {
   const handleUpdateProduct = async (e) => {
     e.preventDefault();
     if (!selectedProduct) return;
+
+    if (parseFloat(formData.price) <= 0) {
+      toast.error("The price must be a positive number");
+      return;
+    }
 
     try {
       const response = await productsAPI.update(selectedProduct.id, formData);

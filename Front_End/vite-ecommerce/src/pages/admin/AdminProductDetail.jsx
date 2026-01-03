@@ -107,6 +107,12 @@ const AdminProductDetail = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (parseFloat(formData.price) <= 0) {
+            toast.error("The price must be a positive number");
+            return;
+        }
+
         try {
             setSaving(true);
 
