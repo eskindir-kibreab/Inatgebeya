@@ -1,5 +1,7 @@
 // src/controllers/auth.controller.js
 import { validationResult } from "express-validator";
+import pool from "../config/db.js";
+import { UserService } from "../services/user.service.js";
 import {
   registerUserService,
   loginUserService,
@@ -194,11 +196,15 @@ export const resendOTP = async (req, res) => {
 // ------------------ GET CURRENT USER ------------------
 export const getCurrentUser = async (req, res) => {
   try {
-    const result = await getCurrentUserService(req.user);
+    const user = await UserService.getUserById(req.user.user_id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
     res.json({
       success: true,
-      data: result,
+      data: user,
     });
   } catch (err) {
     console.error("Get current user error:", err);

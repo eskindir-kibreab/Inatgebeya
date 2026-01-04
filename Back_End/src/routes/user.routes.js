@@ -15,6 +15,11 @@ import {
   authMiddleware,
   requirePermission,
 } from "../middlewares/auth.middleware.js";
+import {
+  uploadSingle,
+  handleUploadError,
+} from "../middlewares/upload.middleware.js";
+import { uploadNationalIDImage } from "../controllers/user.controller.js";
 
 const router = express.Router();
 
@@ -67,6 +72,14 @@ router.put("/profile", updateProfileValidation, updateProfile);
 
 // Change my password
 router.put("/profile/password", changePasswordValidation, changePassword);
+
+// Upload National ID image
+router.post(
+  "/profile/national-id-image",
+  uploadSingle("national_id_image"),
+  handleUploadError,
+  uploadNationalIDImage
+);
 
 // Admin routes - Get all users
 router.get(

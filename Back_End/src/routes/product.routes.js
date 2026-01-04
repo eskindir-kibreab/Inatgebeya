@@ -29,11 +29,14 @@ const router = express.Router();
 
 // Validation rules
 const productValidation = [
-  body("product_name").notEmpty().withMessage("Product name is required"),
+  body("product_name")
+    .isLength({ min: 3 })
+    .withMessage("Product name must be at least 3 characters"),
   body("category_id").isInt().withMessage("Valid category ID is required"),
   body("shop_id").isInt().withMessage("Valid shop ID is required"),
   body("price").isFloat({ gt: 0 }).withMessage("The price must be a positive number"),
   body("description").optional().isString(),
+  body("stock").optional().isInt({ min: 0 }).withMessage("Stock must be a non-negative integer"),
 ];
 
 const sizeValidation = [
@@ -86,7 +89,7 @@ router.use(authMiddleware);
 router.post(
   "/:id/rate",
   [param("id").isInt(), ...ratingValidation],
-  requireRole("user"),
+  requireRole("user", "shop_owner", "admin", "super_admin"),
   rateProduct
 );
 
@@ -135,12 +138,12 @@ router.put(
   updateProductStock
 );
 
-// Admin & item adder admin routes
+// Admin & Shop Owner routes
 router.put(
   "/:id",
   [
     param("id").isInt(),
-    body("product_name").optional().notEmpty(),
+    body("product_name").optional().isLength({ min: 3 }).withMessage("Product name must be at least 3 characters"),
     body("category_id").optional().isInt(),
     body("price").optional().isFloat({ gt: 0 }).withMessage("The price must be a positive number"),
     body("description").optional().isString(),
@@ -152,11 +155,10 @@ router.put(
   updateProduct
 );
 
-// Admin only routes
 router.delete(
   "/:id",
   [param("id").isInt()],
-  requirePermission("admin"),
+  requireRole("super_admin", "admin", "item_adder_admin", "shop_owner"),
   deleteProduct
 );
 

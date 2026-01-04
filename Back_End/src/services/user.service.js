@@ -7,10 +7,12 @@ export class UserService {
     const offset = (page - 1) * limit;
 
     let query = `
-      SELECT u.*, r.role_name, uc.balance as coins_balance
+      SELECT u.*, r.role_name, uc.balance as coins_balance,
+             ui.fan_number, ui.id_image_url
       FROM Users u
       JOIN Roles r ON u.role_id = r.role_id
       LEFT JOIN UserCoins uc ON u.user_id = uc.user_id
+      LEFT JOIN UserIdentifications ui ON u.user_id = ui.user_id
       WHERE 1=1
     `;
     const params = [];
@@ -46,7 +48,10 @@ export class UserService {
     const [users] = await pool.query(query, params);
 
     // Remove sensitive data
-    const safeUsers = users.map(({ password_hash, ...user }) => user);
+    const safeUsers = users.map(({ password_hash, fan_number, id_image_url, ...user }) => ({
+      ...user,
+      identification: (fan_number || id_image_url) ? { fan_number, id_image_url } : null,
+    }));
 
     return {
       users: safeUsers,
@@ -62,10 +67,12 @@ export class UserService {
   // Get user by ID
   static async getUserById(userId) {
     const [users] = await pool.query(
-      `SELECT u.*, r.role_name, uc.balance as coins_balance
+      `SELECT u.*, r.role_name, uc.balance as coins_balance,
+              ui.fan_number, ui.id_image_url
        FROM Users u
        JOIN Roles r ON u.role_id = r.role_id
        LEFT JOIN UserCoins uc ON u.user_id = uc.user_id
+       LEFT JOIN UserIdentifications ui ON u.user_id = ui.user_id
        WHERE u.user_id = ?`,
       [userId]
     );
@@ -74,8 +81,11 @@ export class UserService {
       return null;
     }
 
-    const { password_hash, ...user } = users[0];
-    return user;
+    const { password_hash, fan_number, id_image_url, ...userData } = users[0];
+    return {
+      ...userData,
+      identification: (fan_number || id_image_url) ? { fan_number, id_image_url } : null,
+    };
   }
 
   // Create user
@@ -302,5 +312,30 @@ export class UserService {
     );
 
     return coins.length > 0 ? coins[0] : null;
+  }
+
+  // Update National ID image
+  static async updateNationalIDImage(userId, imageUrl) {
+    // Check if identification record exists
+    const [existing] = await pool.query(
+      "SELECT id FROM UserIdentifications WHERE user_id = ?",
+      [userId]
+    );
+
+    if (existing.length > 0) {
+      const [result] = await pool.query(
+        "UPDATE UserIdentifications SET id_image_url = ? WHERE user_id = ?",
+        [imageUrl, userId]
+      );
+      return result.affectedRows;
+    } else {
+      // Create a minimal record if it doesn't exist (though fan_number is normally required)
+      // Note: This helps backward compatibility for older users
+      const [result] = await pool.query(
+        "INSERT INTO UserIdentifications (user_id, id_image_url, fan_number) VALUES (?, ?, 'NOT_PROVIDED')",
+        [userId, imageUrl]
+      );
+      return result.affectedRows;
+    }
   }
 }

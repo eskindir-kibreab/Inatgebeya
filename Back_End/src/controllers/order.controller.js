@@ -163,7 +163,12 @@ export const updateOrderStatus = async (req, res) => {
 
     const validStatuses = [
       "pending",
+      "paid",
       "approved",
+      "ADMIN_APPROVED",
+      "delivery_assigned",
+      "picked_up",
+      "shipped",
       "delivering",
       "delivered",
       "completed",
@@ -254,7 +259,8 @@ export const cancelOrder = async (req, res) => {
 
     await OrderService.cancelOrder(
       id,
-      req.user.role_name === "user" ? req.user.user_id : null
+      req.user.role_name === "user" ? req.user.user_id : null,
+      req.user.role_name
     );
 
     res.json({

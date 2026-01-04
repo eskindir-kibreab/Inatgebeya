@@ -20,13 +20,19 @@ import categoryRoutes from "./src/routes/category.routes.js";
 import areaRoutes from "./src/routes/area.routes.js";
 import orderRoutes from "./src/routes/order.routes.js";
 import deliveryRoutes from "./src/routes/delivery.routes.js";
+import paymentRoutes from "./src/routes/payment.routes.js";
+import walletRoutes from "./src/routes/wallet.routes.js";
 
 const app = express();
 
 /* ===============================
    Security & Core Middleware
 ================================ */
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use(
   cors({
     origin: [
@@ -76,6 +82,8 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/areas", areaRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/delivery", deliveryRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/wallets", walletRoutes);
 
 /* ===============================
    Health Check

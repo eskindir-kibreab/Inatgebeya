@@ -1,3 +1,4 @@
+import { OrderService } from "./order.service.js";
 import pool from "../config/db.js";
 
 export class DeliveryService {
@@ -271,7 +272,8 @@ export class DeliveryService {
       throw new Error("Order not found");
     }
 
-    if (!["approved", "delivering"].includes(orders[0].status)) {
+    // Allow assignment from Approved or already Delivering states
+    if (!["approved", "ADMIN_APPROVED", "delivering", "delivery_assigned"].includes(orders[0].status)) {
       throw new Error("Order is not ready for delivery");
     }
 
@@ -290,11 +292,8 @@ export class DeliveryService {
       [orderId, deliveryPersonId]
     );
 
-    // Update order status to delivering
-    await pool.query(
-      'UPDATE Orders SET status = "delivering" WHERE order_id = ?',
-      [orderId]
-    );
+    // Sync Order Status: Set to 'delivery_assigned'
+    await OrderService.updateOrderStatus(orderId, "delivery_assigned");
 
     return result.insertId;
   }
@@ -319,18 +318,34 @@ export class DeliveryService {
       return 0;
     }
 
-    // If delivered, update order status and delivery time
-    if (status === "delivered") {
-      const [delivery] = await pool.query(
-        "SELECT order_id FROM DeliveryOrders WHERE delivery_id = ?",
-        [deliveryId]
-      );
+    // Get order ID
+    const [delivery] = await pool.query(
+      "SELECT order_id FROM DeliveryOrders WHERE delivery_id = ?",
+      [deliveryId]
+    );
 
-      if (delivery.length > 0) {
-        await pool.query(
-          'UPDATE Orders SET status = "delivered" WHERE order_id = ?',
-          [delivery[0].order_id]
-        );
+    if (delivery.length > 0) {
+      const orderId = delivery[0].order_id; // Fix: use delivery[0] not delivery
+
+      // Get current order status to enforce flow
+      const [currentOrder] = await pool.query("SELECT status FROM Orders WHERE order_id = ?", [orderId]);
+      const currentStatus = currentOrder[0]?.status;
+
+      // Sync Order Status based on Delivery Status
+      if (status === "picked") {
+        if (currentStatus !== "shipped") {
+          throw new Error("Cannot pick up order. Shop owner must mark it as 'Shipped' first.");
+        }
+        await OrderService.updateOrderStatus(orderId, "picked_up");
+
+      } else if (status === "delivered") {
+        // Strict Check: Must be Picked Up first
+        if (currentStatus !== "picked_up") {
+          throw new Error("Cannot mark delivered. Order must be 'Picked Up' first.");
+        }
+
+        // This triggers the wallet credit logic in OrderService
+        await OrderService.updateOrderStatus(orderId, "delivered");
 
         await pool.query(
           "UPDATE DeliveryOrders SET delivered_at = NOW() WHERE delivery_id = ?",

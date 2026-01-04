@@ -187,19 +187,21 @@ export class ProductService {
       shop_id,
       price,
       description,
+      stock,
       main_image,
       created_by,
     } = productData;
 
     const [result] = await pool.query(
-      `INSERT INTO Products (product_name, category_id, shop_id, price, description, main_image, created_by, is_active) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)`,
+      `INSERT INTO Products (product_name, category_id, shop_id, price, description, stock, main_image, created_by, is_active) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
       [
         product_name,
         category_id,
         shop_id,
         price,
         description,
+        stock || 0,
         main_image,
         created_by,
       ]
@@ -219,6 +221,7 @@ export class ProductService {
       "shop_id",
       "price",
       "description",
+      "stock",
       "main_image",
       "is_active",
     ];

@@ -3,7 +3,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import pool from "../config/db.js";
-import { sendPasswordResetOTP, sendWelcomeEmail, sendRegistrationOTP } from "../utils/email.util.js";
+import {
+  sendPasswordResetOTP,
+  sendWelcomeEmail,
+  sendRegistrationOTP,
+} from "../utils/email.util.js";
 
 // Helper to generate OTP
 export const generateOTP = () =>
@@ -11,16 +15,37 @@ export const generateOTP = () =>
 
 // ------------------ REGISTER ------------------
 export const registerUserService = async (
-  { full_name, email, password, phone },
+  { full_name, email, password, phone, fan_number },
   meta = {}
 ) => {
   // Check if user exists
-  const [existing] = await pool.query(
+  const [existingUser] = await pool.query(
     "SELECT user_id FROM Users WHERE email = ?",
     [email]
   );
-  if (existing.length > 0) {
+  if (existingUser.length > 0) {
     return { error: "User with this email already exists" };
+  }
+
+  // Check if fan_number exists in UserIdentifications
+  const [existingID] = await pool.query(
+    "SELECT id FROM UserIdentifications WHERE fan_number = ?",
+    [fan_number]
+  );
+  if (existingID.length > 0) {
+    return { error: "This National ID (Fan Number) is already registered" };
+  }
+
+  // Check if fan_number exists in pendingregistrations
+  const [existingPending] = await pool.query(
+    "SELECT id FROM pendingregistrations WHERE fan_number = ?",
+    [fan_number]
+  );
+  if (existingPending.length > 0) {
+    return {
+      error:
+        "This National ID (Fan Number) is already in a pending registration",
+    };
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -32,9 +57,17 @@ export const registerUserService = async (
 
   // Store in pendingregistrations
   await pool.query(
-    `INSERT INTO pendingregistrations (full_name, email, password_hash, phone, otp_code, expires_at) 
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [full_name, email, hashedPassword, phone || null, otpCode, expiresAt]
+    `INSERT INTO pendingregistrations (full_name, email, password_hash, phone, fan_number, otp_code, expires_at) 
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      full_name,
+      email,
+      hashedPassword,
+      phone || null,
+      fan_number,
+      otpCode,
+      expiresAt,
+    ]
   );
 
   // Send registration OTP email
@@ -47,7 +80,10 @@ export const registerUserService = async (
 };
 
 // ------------------ VERIFY REGISTRATION OTP ------------------
-export const verifyRegistrationOTPService = async ({ email, otp_code }, meta = {}) => {
+export const verifyRegistrationOTPService = async (
+  { email, otp_code },
+  meta = {}
+) => {
   const [pending] = await pool.query(
     `SELECT * FROM pendingregistrations 
      WHERE email = ? AND otp_code = ? AND expires_at > NOW()`,
@@ -85,6 +121,12 @@ export const verifyRegistrationOTPService = async ({ email, otp_code }, meta = {
 
   const userId = result.insertId;
 
+  // Store National ID
+  await pool.query(
+    "INSERT INTO UserIdentifications (user_id, fan_number) VALUES (?, ?)",
+    [userId, userData.fan_number]
+  );
+
   // Initialize coins
   await pool.query("INSERT INTO UserCoins (user_id, balance) VALUES (?, 0)", [
     userId,
@@ -107,13 +149,7 @@ export const verifyRegistrationOTPService = async ({ email, otp_code }, meta = {
 
     await pool.query(
       `INSERT INTO usertokens (user_id, token, expires_at, user_agent, ip_address) VALUES (?, ?, ?, ?, ?)`,
-      [
-        userId,
-        token,
-        expiresAt,
-        meta.userAgent || null,
-        meta.ipAddress || null,
-      ]
+      [userId, token, expiresAt, meta.userAgent || null, meta.ipAddress || null]
     );
   } catch (err) {
     console.error("Failed to store token after verification:", err);
@@ -170,7 +206,10 @@ export const loginUserService = async ({ email, password }, meta = {}) => {
 
   // Check if user is active
   if (!user.is_active) {
-    return { error: "Your account has been blocked/deactivated. Please contact support." };
+    return {
+      error:
+        "Your account has been blocked/deactivated. Please contact support.",
+    };
   }
 
   const isValid = await bcrypt.compare(password, user.password_hash);

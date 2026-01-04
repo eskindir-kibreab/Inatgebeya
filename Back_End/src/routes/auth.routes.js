@@ -17,8 +17,19 @@ const router = express.Router();
 
 // Validation rules
 const registerValidation = [
-  body("full_name").notEmpty().withMessage("Full name is required"),
+  body("full_name")
+    .custom((value) => {
+      if (!value) return false;
+      const nonSpaces = value.replace(/\s/g, "");
+      return value.trim().includes(" ") && nonSpaces.length >= 6;
+    })
+    .withMessage("Enter valid name (Full name must be at least 6 characters and include a space)"),
   body("email").isEmail().withMessage("Valid email is required"),
+  body("fan_number")
+    .isLength({ min: 16, max: 16 })
+    .withMessage("Fan number must be exactly 16 digits")
+    .matches(/^\d+$/)
+    .withMessage("it must be number"),
   body("password")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters")

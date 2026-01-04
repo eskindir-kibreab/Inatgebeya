@@ -57,20 +57,20 @@ router.get(
     query("page").optional().isInt({ min: 1 }),
     query("limit").optional().isInt({ min: 1, max: 100 }),
   ],
-  requireRole("user"),
+  requireRole("user", "shop_owner", "admin", "super_admin"),
   getMyOrders
 );
 
-router.post("/", requireRole("user"), orderValidation, createOrder);
+router.post("/", requireRole("user", "shop_owner", "admin", "super_admin"), orderValidation, createOrder);
 
 router.post(
   "/:id/cancel",
   [param("id").isInt()],
-  requireRole("user", "super_admin", "admin"),
+  requireRole("user", "shop_owner", "admin", "super_admin"),
   cancelOrder
 );
 
-router.post("/return", requireRole("user"), returnValidation, requestReturn);
+router.post("/return", requireRole("user", "shop_owner", "admin", "super_admin"), returnValidation, requestReturn);
 
 // Shop owner routes
 router.get(

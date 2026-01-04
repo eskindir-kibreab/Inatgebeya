@@ -102,7 +102,7 @@ export const createProduct = async (req, res) => {
     });
   }
 
-  const { product_name, category_id, shop_id, price, description } = req.body;
+  const { product_name, category_id, shop_id, price, description, stock } = req.body;
 
   // Check permissions for shop owner
   if (req.user.role_name === "shop_owner") {
@@ -123,6 +123,7 @@ export const createProduct = async (req, res) => {
       shop_id,
       price,
       description,
+      stock,
       main_image,
       created_by: req.user.user_id,
     });

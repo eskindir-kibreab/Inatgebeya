@@ -131,20 +131,38 @@ export class OrderService {
     await connection.beginTransaction();
 
     try {
-      // Calculate total
-      let total = 0;
+      // Calculation constants
+      const TAX_RATE = 0.15; // 15% VAT
+      const COMMISSION_RATE = 0.10; // 10% Platfrom Commission
+      const CHAPA_FEE_RATE = 0.035; // 3.5% Chapa Fee
+
+      // Calculate subtotal
+      let subtotal = 0;
       for (const item of items) {
-        total += item.price * item.quantity;
+        subtotal += item.price * item.quantity;
       }
 
+      // Calculate extra fees
+      const taxAmount = subtotal * TAX_RATE;
+      const gatewayFee = (subtotal + taxAmount) * CHAPA_FEE_RATE;
+      const commissionTotal = subtotal * COMMISSION_RATE;
+      const finalTotal = subtotal + taxAmount + gatewayFee;
+
       // Create order
-      const initialStatus = payment_method === "mobile_banking" ? "approved" : "pending";
-      const paymentStatus = payment_method === "mobile_banking" ? "paid" : "pending";
+      const initialStatus = "pending";
+      const paymentStatus = "pending";
 
       const [orderResult] = await connection.query(
-        `INSERT INTO Orders (user_id, shop_id, delivery_address, total, status, payment_method, payment_status) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [user_id, shop_id, delivery_address, total, initialStatus, payment_method || 'cash_on_delivery', paymentStatus]
+        `INSERT INTO Orders (
+          user_id, shop_id, delivery_address, total, status, 
+          payment_method, payment_status, tax_amount, 
+          commission_total, gateway_fee
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          user_id, shop_id, delivery_address, finalTotal, initialStatus,
+          payment_method || 'mobile_banking', paymentStatus, taxAmount,
+          commissionTotal, gatewayFee
+        ]
       );
 
       const orderId = orderResult.insertId;
@@ -203,21 +221,93 @@ export class OrderService {
 
   // Update order status
   static async updateOrderStatus(orderId, status) {
-    const [result] = await pool.query(
-      "UPDATE Orders SET status = ? WHERE order_id = ?",
-      [status, orderId]
-    );
-
-    return result.affectedRows;
-  }
-
-  // Cancel order
-  static async cancelOrder(orderId, userId = null) {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
-      // Check if order can be cancelled (only pending orders)
+      // Get order details for approval logic
+      const [orders] = await connection.query(
+        "SELECT * FROM Orders WHERE order_id = ?",
+        [orderId]
+      );
+
+      if (orders.length === 0) {
+        throw new Error("Order not found");
+      }
+
+      // Handle Status Specific Logic
+      const order = orders[0];
+
+      // 1. Admin Approval (Just Status Update)
+      if (status === "ADMIN_APPROVED" || status === "approved") {
+        if (order.payment_status !== "paid") {
+          throw new Error("Cannot approve an unpaid order");
+        }
+      }
+
+      // Allow other meaningful statuses (delivery_assigned, picked_up, shipped, etc.) 
+      // to pass through to the final update query.
+
+      // 2. Delivery Confirmation (Wallet Credit Here)
+      if (status === "delivered") {
+        // Ensure we don't credit twice
+        if (order.status === "delivered") {
+          // Already delivered, do nothing or throw
+        } else {
+          // 1. Calculate Seller Net Earning
+          // Net = Total - Tax - GatewayFee - Commission
+          const subtotal = Number(order.total) - Number(order.tax_amount) - Number(order.gateway_fee);
+          const sellerNet = subtotal - Number(order.commission_total);
+
+          // 2. Update Seller Wallet
+          await connection.query(
+            `UPDATE SellerWallets 
+            SET balance = balance + ?, total_earned = total_earned + ? 
+            WHERE shop_id = ?`,
+            [sellerNet, sellerNet, order.shop_id]
+          );
+
+          // 3. Record Platform Revenue
+          await connection.query(
+            "INSERT INTO PlatformRevenue (order_id, amount, source) VALUES (?, ?, 'commission')",
+            [orderId, order.commission_total]
+          );
+          await connection.query(
+            "INSERT INTO PlatformRevenue (order_id, amount, source) VALUES (?, ?, 'gateway_fee')",
+            [orderId, order.gateway_fee]
+          );
+
+          // 4. Record Tax
+          await connection.query(
+            "INSERT INTO TaxRecords (order_id, tax_amount) VALUES (?, ?)",
+            [orderId, order.tax_amount]
+          );
+        }
+      }
+
+      // Update the order status
+      const finalStatus = status === "approved" ? "ADMIN_APPROVED" : status;
+      await connection.query(
+        "UPDATE Orders SET status = ? WHERE order_id = ?",
+        [finalStatus, orderId]
+      );
+
+      await connection.commit();
+      return true;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Cancel order
+  static async cancelOrder(orderId, userId = null, userRole = "user") {
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
       const [orders] = await connection.query(
         "SELECT status, user_id FROM Orders WHERE order_id = ?",
         [orderId]
@@ -229,12 +319,26 @@ export class OrderService {
 
       const order = orders[0];
 
-      if (order.status !== "pending") {
-        throw new Error(`Cannot cancel order with status: ${order.status}`);
-      }
-
-      if (userId && order.user_id !== userId) {
-        throw new Error("You can only cancel your own orders");
+      // Role-Based Cancellation Rules
+      if (userRole === "user") {
+        // Customer: Can only cancel PENDING
+        if (order.status !== "pending") {
+          throw new Error("You can only cancel pending orders.");
+        }
+        // Verify ownership
+        if (userId && order.user_id !== userId) {
+          throw new Error("You can only cancel your own orders");
+        }
+      } else if (userRole === "admin" || userRole === "super_admin") {
+        // Admin: Can cancel Pending, Paid, Approved, Delivery Assigned
+        // Cannot cancel: Picked Up, Shipped, Delivered
+        const cancellable = ["pending", "paid", "ADMIN_APPROVED", "approved", "delivery_assigned"];
+        if (!cancellable.includes(order.status)) {
+          throw new Error(`Cannot cancel order in status: ${order.status}`);
+        }
+      } else {
+        // Shop Owner / Delivery Person: Not allowed to cancel
+        throw new Error("You do not have permission to cancel orders.");
       }
 
       // Update order status
@@ -309,7 +413,8 @@ export class OrderService {
       `SELECT o.*, u.full_name as customer_name
        FROM Orders o
        JOIN Users u ON o.user_id = u.user_id
-       WHERE o.shop_id = ?
+       WHERE o.shop_id = ? 
+       AND o.status IN ('ADMIN_APPROVED', 'approved', 'delivery_assigned', 'picked_up', 'shipped', 'delivered')
        ORDER BY o.created_at DESC
        LIMIT ? OFFSET ?`,
       [shopId, parseInt(limit), parseInt(offset)]

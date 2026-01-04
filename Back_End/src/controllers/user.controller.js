@@ -352,27 +352,53 @@ export const changePassword = async (req, res) => {
 // Get current user profile
 export const getCurrentUser = async (req, res) => {
   try {
-    // Get user coins
-    const [coins] = await pool.query(
-      "SELECT balance FROM UserCoins WHERE user_id = ?",
-      [req.user.user_id]
-    );
+    const user = await UserService.getUserById(req.user.user_id);
 
-    // Remove password hash from response
-    const { password_hash, ...userData } = req.user;
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
     res.json({
       success: true,
-      data: {
-        ...userData,
-        coins: coins.length > 0 ? coins[0].balance : 0,
-      },
+      data: user,
     });
   } catch (error) {
     console.error("Get current user error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to get user profile",
+    });
+  }
+};
+
+// Upload National ID image
+export const uploadNationalIDImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload an image",
+      });
+    }
+
+    const idImageUrl = `/uploads/national_id/${req.file.filename}`;
+    const userId = req.user.user_id;
+
+    await UserService.updateNationalIDImage(userId, idImageUrl);
+
+    res.json({
+      success: true,
+      message: "National ID image uploaded successfully",
+      data: { id_image_url: idImageUrl },
+    });
+  } catch (error) {
+    console.error("Upload National ID image error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload National ID image",
     });
   }
 };

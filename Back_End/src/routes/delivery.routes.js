@@ -98,14 +98,14 @@ router.get(
     query("status").optional().isIn(["active", "inactive"]),
     query("search").optional().isString().trim(),
   ],
-  requirePermission("super_admin", "admin", "delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin", "shop_owner"),
   getAllDeliveryPersons
 );
 
 router.get(
   "/delivery-persons/:id",
   [param("id").isInt()],
-  requirePermission("super_admin", "admin", "delivery_admin"),
+  requirePermission("super_admin", "admin", "delivery_admin", "shop_owner"),
   getDeliveryPersonById
 );
 
@@ -144,13 +144,13 @@ router.get(
     query("limit").optional().isInt({ min: 1, max: 100 }),
     query("area_id").optional().isInt(),
   ],
-  requireRole("super_admin", "admin", "delivery_admin", "delivery_person"),
+  requireRole("super_admin", "admin", "delivery_admin", "delivery_person", "shop_owner"),
   getPendingDeliveries
 );
 
 router.post(
   "/assign",
-  requireRole("super_admin", "admin", "delivery_admin", "delivery_person"),
+  requireRole("super_admin", "admin", "delivery_admin", "delivery_person", "shop_owner"),
   assignDeliveryValidation,
   assignDelivery
 );
