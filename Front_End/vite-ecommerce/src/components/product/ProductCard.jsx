@@ -4,6 +4,7 @@ import { Star, ShoppingBag } from "lucide-react";
 import ProductRating from "./ProductRating";
 import { useCart } from "../../context/CartContext";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../../utils/image";
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
@@ -25,7 +26,7 @@ const ProductCard = ({ product }) => {
       {/* Product Image */}
       <div className="relative h-56 bg-gray-100 dark:bg-gray-700 overflow-hidden">
         <img
-          src={product.main_image || "/placeholder.jpg"}
+          src={getImageUrl(product.main_image)}
           alt={product.product_name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform 
                    duration-300"

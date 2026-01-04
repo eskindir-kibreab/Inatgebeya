@@ -13,6 +13,7 @@ import { ordersAPI } from "../../api/orders.api";
 import Button from "../../components/forms/Button";
 import ErrorState from "../../components/feedback/ErrorState";
 import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
+import { getImageUrl } from "../../utils/image";
 
 const OrderTracking = () => {
   const { orderId } = useParams();
@@ -234,7 +235,7 @@ const OrderTracking = () => {
                                          border-border-default dark:border-gray-700 rounded-lg"
                 >
                   <img
-                    src={item.main_image || "/placeholder.jpg"}
+                    src={getImageUrl(item.main_image)}
                     alt={item.product_name}
                     className="w-16 h-16 object-cover rounded"
                   />

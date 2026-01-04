@@ -14,6 +14,7 @@ import { categoriesAPI } from "../../api/categories.api";
 import { shopsAPI } from "../../api/shops.api";
 import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../../utils/image";
 
 const AdminProductDetail = () => {
     const { productId } = useParams();
@@ -234,7 +235,7 @@ const AdminProductDetail = () => {
                         <h2 className="text-lg font-semibold mb-6 text-text-main dark:text-gray-200">Product Image</h2>
                         <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-900">
                             <img
-                                src={product.main_image || "/placeholder.jpg"}
+                                src={getImageUrl(product.main_image)}
                                 alt={product.product_name}
                                 className="w-full h-full object-cover"
                             />

@@ -75,7 +75,21 @@ const OrderStatusBadge = ({ status, className = "" }) => {
     },
     cancelled: {
       icon: XCircle,
-      text: "Cancelled",
+      text: "Canceled",
+      bgColor: "bg-red-100 dark:bg-red-900/20",
+      textColor: "text-red-800 dark:text-red-300",
+      iconColor: "text-red-600 dark:text-red-400",
+    },
+    canceled: {
+      icon: XCircle,
+      text: "Canceled",
+      bgColor: "bg-red-100 dark:bg-red-900/20",
+      textColor: "text-red-800 dark:text-red-300",
+      iconColor: "text-red-600 dark:text-red-400",
+    },
+    rejected: {
+      icon: XCircle,
+      text: "Rejected",
       bgColor: "bg-red-100 dark:bg-red-900/20",
       textColor: "text-red-800 dark:text-red-300",
       iconColor: "text-red-600 dark:text-red-400",

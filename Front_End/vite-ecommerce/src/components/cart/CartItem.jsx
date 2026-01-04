@@ -2,6 +2,7 @@ import React from "react";
 import { Trash2, Plus, Minus } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../../utils/image";
 
 const CartItem = ({ item }) => {
   const { updateQuantity, removeFromCart } = useCart();
@@ -34,7 +35,7 @@ const CartItem = ({ item }) => {
       {/* Product Image */}
       <div className="w-20 h-20 flex-shrink-0">
         <img
-          src={item.image || "/placeholder.jpg"}
+          src={getImageUrl(item.image)}
           alt={item.name}
           className="w-full h-full object-cover rounded"
         />

@@ -164,6 +164,9 @@ const Header = () => {
                       <Link to="/admin/orders" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/orders" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
                         <ListTodo className="w-4 h-4 inline mr-1" /> Orders
                       </Link>
+                      <Link to="/admin/bank-transfers" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/bank-transfers" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+                        <UserCheck className="w-4 h-4 inline mr-1" /> Bank Verification
+                      </Link>
                     </>
                   )}
                   {role === "shop_owner" && (

@@ -16,6 +16,7 @@ import Input from "../../components/forms/Input";
 import Select from "../../components/forms/Select";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import { getImageUrl } from "../../utils/image";
 
 const ShopProductDetail = () => {
     const { productId } = useParams();
@@ -304,7 +305,7 @@ const ShopProductDetail = () => {
                                 {imagePreview ? (
                                     <div className="relative group">
                                         <img
-                                            src={imagePreview}
+                                            src={getImageUrl(imagePreview)}
                                             alt="Product Preview"
                                             className="w-full h-48 object-cover rounded-lg"
                                         />

@@ -97,7 +97,7 @@ export const createOrder = async (req, res) => {
     });
   }
 
-  const { shop_id, delivery_address, items, payment_method } = req.body;
+  const { shop_id, delivery_address, items, payment_method, transaction_id } = req.body;
 
   console.log("Create Order Request Body:", JSON.stringify(req.body, null, 2));
   try {
@@ -140,6 +140,7 @@ export const createOrder = async (req, res) => {
       delivery_address,
       items,
       payment_method,
+      transaction_id,
     });
 
     res.status(201).json({

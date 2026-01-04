@@ -17,6 +17,7 @@ import Input from "../../components/forms/Input";
 import Button from "../../components/forms/Button";
 import Select from "../../components/forms/Select";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../../utils/image";
 
 const ShopOwnerInventory = () => {
   const { user } = useAuth();
@@ -400,7 +401,7 @@ const ShopOwnerInventory = () => {
                     <td className="p-6">
                       <div className="flex items-center gap-3">
                         <img
-                          src={product.main_image || "/placeholder.jpg"}
+                          src={getImageUrl(product.main_image)}
                           alt={product.product_name}
                           className="w-12 h-12 object-cover rounded"
                         />

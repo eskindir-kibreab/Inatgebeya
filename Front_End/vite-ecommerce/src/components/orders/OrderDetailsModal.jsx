@@ -11,6 +11,7 @@ import {
 import { format, parseISO } from "date-fns";
 import OrderStatusBadge from "./OrderStatusBadge";
 import Button from "../forms/Button";
+import { getImageUrl } from "../../utils/image";
 
 const OrderDetailsModal = ({
   isOpen,
@@ -223,7 +224,7 @@ const OrderDetailsModal = ({
                                 <div className="h-10 w-10 flex-shrink-0">
                                   <img
                                     className="h-10 w-10 rounded object-cover"
-                                    src={item.main_image || "/placeholder.jpg"}
+                                    src={getImageUrl(item.main_image)}
                                     alt={item.product_name}
                                   />
                                 </div>

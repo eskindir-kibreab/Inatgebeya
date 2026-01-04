@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
-    Package,
+    Clock,
     CheckCircle,
+    XCircle,
+    Package,
     Truck,
-    Home,
-    User,
-    ArrowLeft,
-    DollarSign,
+    ExternalLink,
+    ChevronLeft,
     AlertCircle,
     CreditCard,
+    MapPin,
+    Shield,
+    LayoutDashboard,
+    Eye,
+    User,
+    Home,
+    DollarSign,
+    ArrowLeft
 } from "lucide-react";
 import { ordersAPI } from "../../api/orders.api";
 import { paymentsAPI } from "../../api/payments.api";
@@ -19,6 +27,7 @@ import ErrorState from "../../components/feedback/ErrorState";
 import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
 import toast from "react-hot-toast";
 import { getEffectiveOrderStatus } from "../../utils/orderStatus";
+import { getImageUrl } from "../../utils/image";
 
 const OrderDetail = () => {
     const { orderId } = useParams();
@@ -95,10 +104,6 @@ const OrderDetail = () => {
 
         setActionLoading(true);
         try {
-            // Assuming updateStatus takes the status string or object
-            // Based on previous fixes, we should send an object { status: 'approved' }
-            // But verify strictly if your API call wrapper handles this.
-            // Assuming the API call wrapper does simple post/put:
             await ordersAPI.updateStatus(orderId, { status: "approved" });
             toast.success("Order approved and funds released!");
             fetchOrder();
@@ -111,7 +116,12 @@ const OrderDetail = () => {
     };
 
     const getStatusSteps = () => {
-        const strictSteps = [
+        const s = order?.status?.toLowerCase();
+        const ps = order?.payment_status?.toLowerCase();
+        const ds = order?.delivery_status?.toLowerCase();
+        const isRejected = order.bank_transfer_details?.bank_payment_status === 'REJECTED';
+
+        let strictSteps = [
             { id: "pending", label: "Pending", icon: Package },
             { id: "paid", label: "Paid", icon: CreditCard },
             { id: "approved", label: "Approved", icon: CheckCircle },
@@ -122,11 +132,9 @@ const OrderDetail = () => {
         ];
 
         let currentStepIndex = 0;
-        const s = order?.status?.toLowerCase();
-        const ps = order?.payment_status?.toLowerCase();
-        const ds = order?.delivery_status?.toLowerCase();
+        let isFailed = false;
 
-        // Progressive logic to determine the furthest active step
+        // Determine progression
         if (s === 'pending') currentStepIndex = 0;
         if (ps === 'paid') currentStepIndex = 1;
         if (s === 'approved' || s === 'admin_approved') currentStepIndex = 2;
@@ -136,10 +144,27 @@ const OrderDetail = () => {
         if (s === 'delivered' || ds === 'delivered') currentStepIndex = 6;
         if (s === 'completed') currentStepIndex = 6;
 
+        // Handle Canceled State
+        if (s === 'cancelled') {
+            isFailed = true;
+            const insertIndex = Math.min(currentStepIndex + 1, strictSteps.length - 1);
+            strictSteps.splice(insertIndex, 0, { id: "failed", label: "Canceled", icon: XCircle, failed: true });
+            currentStepIndex = insertIndex;
+        }
+        // Handle Rejected State (specifically for bank transfers)
+        else if (isRejected) {
+            isFailed = true;
+            // Rejection happens at the "Paid" step verification point
+            const insertIndex = 1;
+            strictSteps.splice(insertIndex, 1, { id: "failed", label: "Rejected", icon: XCircle, failed: true });
+            currentStepIndex = insertIndex;
+        }
+
         return strictSteps.map((step, index) => ({
             ...step,
-            completed: index <= currentStepIndex,
+            completed: index <= currentStepIndex && !step.failed,
             current: index === currentStepIndex,
+            isPastFailure: isFailed && index > currentStepIndex
         }));
     };
 
@@ -167,11 +192,10 @@ const OrderDetail = () => {
     }
 
     const statusSteps = getStatusSteps();
-    const canCancel = (isUser || isAdmin) && ["pending"].includes(order.status);
+    const isRejected = order.status?.toLowerCase() === 'rejected' || order.bank_transfer_details?.bank_payment_status === 'REJECTED';
+    const canCancel = (isUser || isAdmin) && order.status?.toLowerCase() === "pending" && !isRejected;
     const canPay = isUser && order.payment_method === "mobile_banking" && order.payment_status === "pending" && order.status !== "cancelled";
 
-    // Admin can approve if payment is 'paid' but status is NOT yet approved/delivered/etc.
-    // Allow approval for 'pending' or empty/corrupted status if payment is made.
     const canApprove = isAdmin && order.payment_status === "paid" && (order.status === "pending" || order.status === "");
 
     const canConfirm = isUser && order.status === "delivered";
@@ -192,11 +216,8 @@ const OrderDetail = () => {
         }
     };
 
-
-
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
-            {/* Header & Back Nav */}
             <div className="flex items-center justify-between mb-8">
                 <button
                     onClick={() => navigate(-1)}
@@ -232,7 +253,6 @@ const OrderDetail = () => {
                 </div>
             </div>
 
-            {/* Main Title Block */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-8 shadow-sm border border-border-default dark:border-gray-700">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -258,50 +278,93 @@ const OrderDetail = () => {
                 </div>
             </div>
 
+            {order.payment_method === "bank_transfer" && order.payment_status === "pending" && order.status !== "cancelled" && (
+                <>
+                    {order.bank_transfer_details?.bank_payment_status === 'REJECTED' ? (
+                        <div className="bg-status-error/5 border border-status-error/20 rounded-xl p-4 mb-8 flex items-start gap-4 animate-in fade-in slide-in-from-top-4">
+                            <div className="p-2 bg-status-error/10 rounded-lg">
+                                <XCircle className="w-6 h-6 text-status-error" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-status-error">Payment Rejected</h3>
+                                <p className="text-sm text-red-600 dark:text-red-400 mt-1 font-medium italic">
+                                    Reason: {order.bank_transfer_details.rejection_reason || "No reason provided by admin."}
+                                </p>
+                                <p className="text-xs text-text-secondary dark:text-gray-400 mt-2">
+                                    Please re-check your transaction ID and receipt screenshot. You may need to contact support.
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-8 flex items-start gap-4 animate-in fade-in slide-in-from-top-4">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <AlertCircle className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-primary">Payment Verification Pending</h3>
+                                <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">
+                                    Your bank transfer details are being reviewed by our team.
+                                    This usually takes 10-30 minutes. Once verified, your order will be processed.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Timeline & Items */}
                 <div className="lg:col-span-2 space-y-8">
-
-                    {/* Status Timeline */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-border-default dark:border-gray-700">
-                        <h2 className="font-semibold text-lg mb-6 text-text-main dark:text-gray-200">Order Progress</h2>
-                        <div className="relative flex justify-between">
-                            {/* Line */}
-                            <div className="absolute top-5 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700 -z-0 rounded-full" />
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="font-semibold text-lg text-text-main dark:text-gray-200">Order Progress</h2>
+                            {order.status === 'cancelled' && (
+                                <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full uppercase">Terminated</span>
+                            )}
+                        </div>
 
-                            {statusSteps.map((step) => {
-                                const Icon = step.icon;
+                        <div className="flex flex-col items-center justify-center py-8">
+                            {(() => {
+                                const activeStep = statusSteps.find(s => s.current) || statusSteps[0];
+                                const Icon = activeStep.icon;
+                                const isFailed = activeStep.failed || order.status === 'cancelled';
+
                                 return (
-                                    <div key={step.id} className="relative z-10 flex flex-col items-center">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors
-                       ${step.completed ? 'bg-status-success text-white' :
-                                                step.current ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'}
-                     `}>
-                                            <Icon className="w-5 h-5" />
+                                    <div className="flex flex-col items-center animate-in zoom-in duration-300">
+                                        <div className={`w-24 h-24 rounded-full flex items-center justify-center shadow-lg transition-all transform hover:scale-105
+                                            ${isFailed ? 'bg-red-500 text-white shadow-red-200 dark:shadow-red-900/20' :
+                                                activeStep.id === 'delivered' ? 'bg-status-success text-white shadow-green-200 dark:shadow-green-900/20' :
+                                                    'bg-primary text-white shadow-primary/20'}
+                                        `}>
+                                            <Icon className="w-12 h-12" />
                                         </div>
-                                        <span className={`mt-2 text-xs font-medium ${step.completed || step.current ? 'text-text-main dark:text-gray-200' : 'text-gray-400'}`}>
-                                            {step.label}
-                                        </span>
+                                        <div className="mt-6 text-center">
+                                            <p className="text-sm uppercase tracking-widest text-text-secondary dark:text-gray-400 font-semibold mb-1">
+                                                Current Status
+                                            </p>
+                                            <h3 className={`text-3xl font-black ${isFailed ? 'text-red-600' : 'text-text-main dark:text-gray-100'}`}>
+                                                {activeStep.label}
+                                            </h3>
+                                            <p className="mt-2 text-text-secondary dark:text-gray-400 max-w-xs mx-auto">
+                                                {isFailed ? "This order has been stopped and will not proceed further." :
+                                                    activeStep.id === 'pending' ? "We've received your order and are waiting for payment." :
+                                                        activeStep.id === 'paid' ? "Payment received! We're verifying the details now." :
+                                                            activeStep.id === 'delivered' ? "Package delivered successfully. Enjoy your purchase!" :
+                                                                "Your order is moving through our fulfillment process."}
+                                            </p>
+                                        </div>
                                     </div>
                                 );
-                            })}
+                            })()}
                         </div>
-                        {order.status === 'cancelled' && (
-                            <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg flex items-center gap-3">
-                                <AlertCircle className="w-5 h-5" />
-                                <span>This order has been cancelled.</span>
-                            </div>
-                        )}
                     </div>
 
-                    {/* Items List */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-border-default dark:border-gray-700">
                         <h2 className="font-semibold text-lg mb-6 text-text-main dark:text-gray-200">Items ({order.items?.length || 0})</h2>
                         <div className="space-y-6">
                             {order.items?.map((item, idx) => (
                                 <div key={idx} className="flex gap-4 items-start pb-6 border-b border-gray-100 dark:border-gray-700 last:border-0 last:pb-0">
                                     <img
-                                        src={item.main_image || '/placeholder.jpg'}
+                                        src={getImageUrl(item.main_image)}
                                         alt={item.product_name}
                                         className="w-20 h-20 object-cover rounded-lg bg-gray-50"
                                     />
@@ -326,13 +389,9 @@ const OrderDetail = () => {
                             ))}
                         </div>
                     </div>
-
                 </div>
 
-                {/* Right Column: Summaries */}
                 <div className="space-y-8">
-
-                    {/* Shipping Info */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-border-default dark:border-gray-700">
                         <h2 className="font-semibold text-lg mb-4 text-text-main dark:text-gray-200 flex items-center gap-2">
                             <Truck className="w-5 h-5 text-primary" />
@@ -352,7 +411,6 @@ const OrderDetail = () => {
                         </div>
                     </div>
 
-                    {/* Payment & Financials */}
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-border-default dark:border-gray-700">
                         <h2 className="font-semibold text-lg mb-4 text-text-main dark:text-gray-200 flex items-center gap-2">
                             <DollarSign className="w-5 h-5 text-primary" />
@@ -362,12 +420,27 @@ const OrderDetail = () => {
                         <div className="space-y-3 mb-6">
                             <div className="flex justify-between text-sm">
                                 <span className="text-text-secondary dark:text-gray-400">Method</span>
-                                <span className="font-medium capitalize">{order.payment_method?.replace('_', ' ')}</span>
+                                <span className="font-medium">
+                                    {order.payment_method === "bank_transfer"
+                                        ? "Bank Transfer"
+                                        : order.payment_method === "mobile_banking"
+                                            ? "Mobile Banking"
+                                            : order.payment_method === "credit_card"
+                                                ? "Credit/Debit Card"
+                                                : "Cash on Delivery"}
+                                </span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-text-secondary dark:text-gray-400">Payment Status</span>
-                                <span className={`font-medium px-2 py-0.5 rounded text-xs ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                    {order.payment_status?.toUpperCase()}
+                                <span className={`font-medium px-2 py-0.5 rounded text-xs ${order.payment_status === 'paid'
+                                    ? 'bg-green-100 text-green-700'
+                                    : order.bank_transfer_details?.bank_payment_status === 'REJECTED'
+                                        ? 'bg-red-100 text-red-700'
+                                        : 'bg-yellow-100 text-yellow-700'
+                                    }`}>
+                                    {order.bank_transfer_details?.bank_payment_status === 'REJECTED'
+                                        ? 'REJECTED'
+                                        : order.payment_status?.toUpperCase()}
                                 </span>
                             </div>
                         </div>
@@ -382,7 +455,6 @@ const OrderDetail = () => {
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

@@ -11,6 +11,7 @@ import Input from "../../components/forms/Input";
 import Select from "../../components/forms/Select";
 import AdminActiveFilters from "../../components/search/AdminActiveFilters";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../../utils/image";
 
 const AdminProducts = () => {
     const navigate = useNavigate();
@@ -148,11 +149,6 @@ const AdminProducts = () => {
         return `ETB ${amount?.toLocaleString() || "0"}`;
     };
 
-    const getImageUrl = (path) => {
-        if (!path) return "/placeholder.jpg";
-        if (path.startsWith("http")) return path;
-        return path;
-    };
 
     return (
         <div className="max-w-7xl mx-auto">

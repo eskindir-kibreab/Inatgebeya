@@ -104,7 +104,30 @@ pool
         SELECT shop_id FROM Shops
       `);
 
-      // 4. Update Orders Table with financial fields
+      // 4. Bank Transfer Tables
+      const bankTables = ['awash_bank_payments', 'cbe_bank_payments', 'birhan_bank_payments'];
+      for (const table of bankTables) {
+        await connection.query(`
+          CREATE TABLE IF NOT EXISTS ${table} (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            order_id INT NOT NULL,
+            user_id INT NOT NULL,
+            transaction_id VARCHAR(255) NOT NULL,
+            receipt_url VARCHAR(255) NOT NULL,
+            amount DECIMAL(15,2) NOT NULL,
+            status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            admin_action_at TIMESTAMP NULL,
+            UNIQUE KEY unique_tx (transaction_id),
+            FOREIGN KEY (order_id) REFERENCES Orders(order_id),
+            FOREIGN KEY (user_id) REFERENCES Users(user_id)
+          )
+        `);
+      }
+      console.log("✅ Bank transfer tables verified");
+
+      // 5. Update Orders Table with financial fields
       const [orderCols] = await connection.query("SHOW COLUMNS FROM Orders LIKE 'tax_amount'");
       if (orderCols.length === 0) {
         await connection.query(`

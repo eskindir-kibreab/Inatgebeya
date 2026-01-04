@@ -18,6 +18,7 @@ import ProductPrice from "../../components/product/ProductPrice";
 import Button from "../../components/forms/Button";
 import ErrorState from "../../components/feedback/ErrorState";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../../utils/image";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -240,7 +241,7 @@ const ProductDetail = () => {
                          dark:border-gray-700 rounded-xl p-4 mb-4 shadow-sm"
           >
             <img
-              src={images[activeImage] || "/placeholder.jpg"}
+              src={getImageUrl(images[activeImage])}
               alt={product.product_name}
               className="w-full h-[450px] object-contain rounded-lg"
             />
@@ -260,7 +261,7 @@ const ProductDetail = () => {
                     }`}
                 >
                   <img
-                    src={img}
+                    src={getImageUrl(img)}
                     alt={`${product.product_name} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -611,7 +612,7 @@ const ProductDetail = () => {
               >
                 <div className="aspect-square rounded-xl overflow-hidden mb-4 bg-bg-light dark:bg-gray-900">
                   <img
-                    src={p.main_image || "/placeholder.jpg"}
+                    src={getImageUrl(p.main_image)}
                     alt={p.product_name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />

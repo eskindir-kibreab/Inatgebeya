@@ -11,6 +11,7 @@ const Button = ({
   fullWidth = false,
   onClick,
   className = "",
+  outline, // Destructure to avoid passing to DOM
   ...props
 }) => {
   const baseClasses =

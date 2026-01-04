@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, CreditCard, Shield } from "lucide-react";
 import { useCart } from "../../context/CartContext";
-import { ordersAPI, paymentsAPI } from "../../api";
+import { ordersAPI, paymentsAPI, bankTransferAPI } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import Input from "../../components/forms/Input";
 import Select from "../../components/forms/Select";
@@ -23,7 +23,28 @@ const Checkout = () => {
     zipCode: "",
   });
   const [paymentMethod, setPaymentMethod] = useState("mobile_banking");
+  const [selectedBank, setSelectedBank] = useState("awash");
+  const [transactionId, setTransactionId] = useState("");
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptPreview, setReceiptPreview] = useState(null);
   const [orderNote, setOrderNote] = useState("");
+
+  // Clean up object URL when component unmounts or receipt changes
+  useEffect(() => {
+    if (!receiptFile) {
+      setReceiptPreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(receiptFile);
+    setReceiptPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [receiptFile]);
+
+  const bankDetails = {
+    awash: { name: "Awash Bank", accountName: "Inatgebeya", accountNumber: "0132047382901" },
+    cbe: { name: "Commercial Bank of Ethiopia (CBE)", accountName: "Inatgebeya", accountNumber: "1000345678901" },
+    birhan: { name: "Birhan Bank", accountName: "Inatgebeya", accountNumber: "2501234567890" }
+  };
 
   const subtotal = getCartTotal();
   const shipping = subtotal > 10000 ? 0 : 50;
@@ -31,8 +52,6 @@ const Checkout = () => {
   const total = subtotal + shipping + tax;
 
   useEffect(() => {
-    // TODO: Integrate real saved addresses API when available.
-    // For now, start with an empty list and let the user add addresses.
     setAddresses([]);
   }, []);
 
@@ -47,27 +66,27 @@ const Checkout = () => {
       return;
     }
 
-    // Mobile banking now goes THROUGH Chapa initialization after order creation
+    // Validation for Bank Transfer
+    if (paymentMethod === "bank_transfer") {
+      if (!transactionId.trim()) {
+        toast.error("Transaction ID is required for bank transfer");
+        return;
+      }
+      if (!receiptFile) {
+        toast.error("Receipt screenshot is mandatory for bank transfer");
+        return;
+      }
+    }
 
     setLoading(true);
     try {
-      // DEBUG: Check the items being processed
-      const debugItems = cartItems.map(i => ({ id: i.id, type: typeof i.id, product_id: i.product_id }));
-      console.log("Debug Items:", debugItems);
-      // NOTE: Remove this visible debugging after fixing
-      // setVisibleError(`Debug Items: ${JSON.stringify(debugItems)}`); 
-
-
       // Group items by shop
       const itemsByShop = {};
       cartItems.forEach((item) => {
-        console.log("Processing cart item:", JSON.stringify(item, null, 2));
-        console.log("item.id:", item.id, "typeof:", typeof item.id);
         if (!itemsByShop[item.shop_id]) {
           itemsByShop[item.shop_id] = [];
         }
 
-        // Ensure product ID is valid
         const pId = parseInt(item.id);
         if (isNaN(pId)) {
           throw new Error(`Invalid Product ID for item: ${item.name || 'Unknown'}`);
@@ -81,8 +100,6 @@ const Checkout = () => {
         });
       });
 
-      console.log("Items by shop:", itemsByShop);
-
       // Create orders for each shop
       const orderPromises = Object.entries(itemsByShop).map(
         ([shopId, items]) => {
@@ -95,6 +112,7 @@ const Checkout = () => {
             delivery_address: deliveryAddress,
             items,
             payment_method: paymentMethod,
+            transaction_id: paymentMethod === 'bank_transfer' ? transactionId : null,
           });
         }
       );
@@ -103,21 +121,17 @@ const Checkout = () => {
       const allSuccess = results.every((result) => result.success);
 
       if (allSuccess) {
-        // If it's a mobile banking order, we need to initialize Chapa
+        const firstOrderId = results[0].data.orderId;
+
+        // 1. Handle Mobile Banking (Chapa)
         if (paymentMethod === "mobile_banking") {
           toast.loading("Initializing secure payment...");
           try {
-            // We assume for now the cart represents one major session, but since we split by shop,
-            // we'll initialize the first order or handle multiple. 
-            // Most marketplaces treat one checkout session as one payment.
-            // For this implementation, we take the FIRST order ID returned.
-            const firstOrderId = results[0].data.orderId;
             const payment = await paymentsAPI.initialize(firstOrderId);
-
             if (payment.success && payment.data.checkout_url) {
               clearCart();
               window.location.href = payment.data.checkout_url;
-              return; // Stop execution as we are redirecting
+              return;
             } else {
               throw new Error("Failed to get checkout URL");
             }
@@ -125,6 +139,34 @@ const Checkout = () => {
             console.error("Payment init error:", payError);
             const errMsg = payError.response?.data?.message || "Payment initialization failed.";
             toast.error(`Order created, but: ${errMsg}`);
+            navigate("/orders");
+            return;
+          }
+        }
+
+        // 2. Handle Bank Transfer
+        if (paymentMethod === "bank_transfer") {
+          toast.loading("Submitting payment details...");
+          try {
+            const formData = new FormData();
+            formData.append("bank", selectedBank);
+            formData.append("order_id", firstOrderId);
+            formData.append("transaction_id", transactionId);
+            formData.append("amount", total);
+            formData.append("receipt", receiptFile);
+
+            const bankResult = await bankTransferAPI.submit(formData);
+            if (bankResult.success) {
+              toast.success("Payment submitted for verification!");
+              clearCart();
+              navigate("/orders");
+              return;
+            } else {
+              throw new Error(bankResult.message || "Failed to submit bank transfer");
+            }
+          } catch (bankError) {
+            console.error("Bank Transfer submission error:", bankError);
+            toast.error(`Order created, but payment submission failed: ${bankError.message}`);
             navigate("/orders");
             return;
           }
@@ -140,14 +182,7 @@ const Checkout = () => {
       console.error("Place order error details:", error.response?.data || error);
       const errorData = error.response?.data;
       const errorMessage = errorData?.message || "Failed to place order.";
-
-      if (errorData?.errors && Array.isArray(errorData.errors)) {
-        // Detailed validation error (e.g. from express-validator)
-        const detailedMsg = errorData.errors.map(e => e.msg).join(", ");
-        toast.error(`Error: ${detailedMsg}`);
-      } else {
-        toast.error(errorMessage);
-      }
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -362,16 +397,100 @@ const Checkout = () => {
                       <p className="font-medium text-text-main dark:text-gray-200">
                         {method.label}
                       </p>
-                      {method.id === "cash_on_delivery" && (
-                        <p className="text-sm text-text-secondary dark:text-gray-400">
-                          Pay when you receive your order
-                        </p>
-                      )}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Bank Transfer Details Section */}
+            {paymentMethod === "bank_transfer" && (
+              <div className="mt-6 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-primary/30 space-y-6">
+                <div>
+                  <h3 className="font-medium text-text-main dark:text-gray-200 mb-3">
+                    Select Your Bank
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {Object.entries(bankDetails).map(([key, bank]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setSelectedBank(key)}
+                        className={`p-3 text-sm font-medium border rounded-lg transition-all
+                          ${selectedBank === key
+                            ? "bg-primary text-white border-primary shadow-lg scale-105"
+                            : "bg-white dark:bg-gray-800 text-text-main dark:text-gray-300 border-border-default dark:border-gray-700 hover:border-primary"
+                          }`}
+                      >
+                        {bank.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <p className="text-sm font-semibold text-primary mb-2">Account Details:</p>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="text-text-secondary dark:text-gray-400">Account Name:</span> <span className="font-bold dark:text-white">{bankDetails[selectedBank].accountName}</span></p>
+                    <p><span className="text-text-secondary dark:text-gray-400">Account Number:</span> <span className="font-bold tracking-wider dark:text-white uppercase">{bankDetails[selectedBank].accountNumber}</span></p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <Input
+                    label="Transaction ID (Mandatory)"
+                    placeholder="Enter the transaction ID from your bank app"
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    required
+                  />
+
+                  <div>
+                    <label className="block text-sm font-medium text-text-main dark:text-gray-300 mb-1">
+                      Upload Receipt Screenshot (Mandatory)
+                    </label>
+                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-border-default dark:border-gray-700 border-dashed rounded-lg hover:border-primary transition-colors cursor-pointer relative overflow-hidden group">
+                      <div className="space-y-1 text-center">
+                        {receiptPreview ? (
+                          <div className="relative inline-block">
+                            <img
+                              src={receiptPreview}
+                              alt="Receipt Preview"
+                              className="max-h-48 rounded-lg shadow-md mb-2 group-hover:opacity-75 transition-opacity"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <p className="bg-black/50 text-white px-3 py-1 rounded-full text-xs font-bold">Change Receipt</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                        <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                          <label className="relative cursor-pointer bg-transparent rounded-md font-medium text-primary hover:text-primary-focus">
+                            <span>{receiptFile ? receiptFile.name : "Upload a file"}</span>
+                            <input
+                              type="file"
+                              className="sr-only"
+                              accept="image/*"
+                              onChange={(e) => setReceiptFile(e.target.files[0])}
+                            />
+                          </label>
+                        </div>
+                        <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                      </div>
+                      <input
+                        type="file"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        accept="image/*"
+                        onChange={(e) => setReceiptFile(e.target.files[0])}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Order Note */}
             <div className="mt-6">

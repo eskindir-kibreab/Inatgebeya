@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { BankTransferService } from "./bankTransfer.service.js";
 
 export class OrderService {
   // Get all orders with filters
@@ -55,7 +56,7 @@ export class OrderService {
 
     // Get total count
     const countQuery = query.replace(
-      /SELECT o\.\*, u\.full_name as customer_name, s\.shop_name/,
+      /SELECT o\.\*, o\.order_id as id, u\.full_name as customer_name, s\.shop_name/,
       "SELECT COUNT(*) as total"
     );
     const [countResult] = await pool.query(countQuery, params);
@@ -67,17 +68,9 @@ export class OrderService {
 
     const [orders] = await pool.query(query, params);
 
-    // Get order items for each order
+    // Enrich each order with items and bank details
     for (const order of orders) {
-      const [items] = await pool.query(
-        `SELECT oi.*, p.product_name, ps.size_label
-         FROM OrderItems oi
-         JOIN Products p ON oi.product_id = p.product_id
-         LEFT JOIN ProductSizes ps ON oi.size_id = ps.size_id
-         WHERE oi.order_id = ?`,
-        [order.order_id]
-      );
-      order.items = items;
+      await this._enrichOrderData(order);
     }
 
     return {
@@ -94,7 +87,7 @@ export class OrderService {
   // Get order by ID
   static async getOrderById(orderId) {
     const [orders] = await pool.query(
-      `SELECT o.*, u.full_name as customer_name, u.email as customer_email, 
+      `SELECT o.*, o.order_id as id, u.full_name as customer_name, u.email as customer_email, 
               s.shop_name, s.shop_id, a.area_name
        FROM Orders o
        JOIN Users u ON o.user_id = u.user_id
@@ -110,16 +103,8 @@ export class OrderService {
 
     const order = orders[0];
 
-    // Get order items
-    const [items] = await pool.query(
-      `SELECT oi.*, p.product_name, p.main_image, ps.size_label
-       FROM OrderItems oi
-       JOIN Products p ON oi.product_id = p.product_id
-       LEFT JOIN ProductSizes ps ON oi.size_id = ps.size_id
-       WHERE oi.order_id = ?`,
-      [orderId]
-    );
-    order.items = items;
+    // Get order items and bank details via helper
+    await this._enrichOrderData(order);
 
     // Get delivery info if exists
     const [delivery] = await pool.query(
@@ -137,7 +122,18 @@ export class OrderService {
 
   // Create order
   static async createOrder(orderData) {
-    const { user_id, shop_id, delivery_address, items, payment_method } = orderData;
+    const { user_id, shop_id, delivery_address, items, payment_method, transaction_id } = orderData;
+
+    // 1. If it's a bank transfer, check transaction ID BEFORE starting order creation
+    if (payment_method === 'bank_transfer') {
+      if (!transaction_id) {
+        throw new Error("Transaction ID is required for bank transfer");
+      }
+      const exists = await BankTransferService.asyncCheckTransactionExists(transaction_id);
+      if (exists) {
+        throw new Error("please check payment");
+      }
+    }
 
     // Start transaction
     const connection = await pool.getConnection();
@@ -378,6 +374,9 @@ export class OrderService {
         }
       }
 
+      // Cleanup pending bank transfers if any
+      await BankTransferService.cancelPendingTransfer(orderId, connection);
+
       await connection.commit();
       connection.release();
 
@@ -394,7 +393,7 @@ export class OrderService {
     const offset = (page - 1) * limit;
 
     const [orders] = await pool.query(
-      `SELECT o.*, s.shop_name
+      `SELECT o.*, o.order_id as id, s.shop_name
        FROM Orders o
        JOIN Shops s ON o.shop_id = s.shop_id
        WHERE o.user_id = ?
@@ -402,6 +401,10 @@ export class OrderService {
        LIMIT ? OFFSET ?`,
       [userId, parseInt(limit), parseInt(offset)]
     );
+
+    for (const order of orders) {
+      await this._enrichOrderData(order);
+    }
 
     const [countResult] = await pool.query(
       "SELECT COUNT(*) as total FROM Orders WHERE user_id = ?",
@@ -426,7 +429,7 @@ export class OrderService {
     const offset = (page - 1) * limit;
 
     const [orders] = await pool.query(
-      `SELECT o.*, u.full_name as customer_name
+      `SELECT o.*, o.order_id as id, u.full_name as customer_name
        FROM Orders o
        JOIN Users u ON o.user_id = u.user_id
        WHERE o.shop_id = ? 
@@ -435,6 +438,10 @@ export class OrderService {
        LIMIT ? OFFSET ?`,
       [shopId, parseInt(limit), parseInt(offset)]
     );
+
+    for (const order of orders) {
+      await this._enrichOrderData(order);
+    }
 
     const [countResult] = await pool.query(
       "SELECT COUNT(*) as total FROM Orders WHERE shop_id = ?",
@@ -491,13 +498,35 @@ export class OrderService {
     return result.insertId;
   }
 
-  // Update return status
-  static async updateReturnStatus(returnId, status) {
-    const [result] = await pool.query(
-      "UPDATE ReturnedItems SET status = ? WHERE return_id = ?",
-      [status, returnId]
+  // Private helper to enrich order data with items and bank details
+  static async _enrichOrderData(order) {
+    // 1. Get items
+    const [items] = await pool.query(
+      `SELECT oi.*, p.product_name, ps.size_label,
+              (SELECT image_url FROM ProductImages WHERE product_id = p.product_id LIMIT 1) as main_image
+       FROM OrderItems oi
+       JOIN Products p ON oi.product_id = p.product_id
+       LEFT JOIN ProductSizes ps ON oi.size_id = ps.size_id
+       WHERE oi.order_id = ?`,
+      [order.order_id]
     );
+    order.items = items;
 
-    return result.affectedRows;
+    // 2. Get bank transfer details
+    if (order.payment_method === "bank_transfer") {
+      const banks = ["awash", "cbe", "birhan"];
+      for (const bank of banks) {
+        const table = `${bank}_bank_payments`;
+        const [bankPayment] = await pool.query(
+          `SELECT status as bank_payment_status, rejection_reason, transaction_id, '${bank}' as bank_type 
+           FROM ${table} WHERE order_id = ? ORDER BY created_at DESC LIMIT 1`,
+          [order.order_id]
+        );
+        if (bankPayment.length > 0) {
+          order.bank_transfer_details = bankPayment[0];
+          break;
+        }
+      }
+    }
   }
 }

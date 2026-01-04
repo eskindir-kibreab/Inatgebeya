@@ -16,6 +16,7 @@ export const getEffectiveOrderStatus = (order) => {
 
     // 1. Terminal statuses (override everything)
     if (s === 'cancelled') return 'cancelled';
+    if (order.bank_transfer_details?.bank_payment_status === 'REJECTED') return 'rejected';
     if (s === 'completed') return 'delivered'; // specialized completed state often means delivered/received
 
     // 2. Delivery progression (highest priority after terminal)

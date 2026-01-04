@@ -30,6 +30,7 @@ import toast from "react-hot-toast";
 import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
 import OrderDetailsModal from "../../components/orders/OrderDetailsModal";
 import { getEffectiveOrderStatus } from "../../utils/orderStatus";
+import { getImageUrl } from "../../utils/image";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -124,9 +125,9 @@ const Orders = () => {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (order) =>
-          order.id.toString().includes(query) ||
+          (order.order_id?.toString() || "").includes(query) ||
           order.items?.some((item) =>
-            item.product?.name?.toLowerCase().includes(query)
+            (item.product_name?.toLowerCase() || "").includes(query)
           )
       );
     }
@@ -380,7 +381,7 @@ const Orders = () => {
 
             return (
               <div
-                key={order.id}
+                key={order.order_id}
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700"
               >
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex flex-wrap justify-between items-center">
@@ -451,7 +452,9 @@ const Orders = () => {
                                   ? "Credit/Debit Card"
                                   : order.payment_method === "mobile_banking"
                                     ? "Mobile Banking"
-                                    : "Cash on Delivery"}
+                                    : order.payment_method === "bank_transfer"
+                                      ? "Bank Transfer"
+                                      : "Cash on Delivery"}
                               </p>
                             </div>
                           </div>
@@ -521,7 +524,7 @@ const Orders = () => {
                           <div className="flex-shrink-0 w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden">
                             {item.main_image ? (
                               <img
-                                src={item.main_image}
+                                src={getImageUrl(item.main_image)}
                                 alt={item.product_name}
                                 className="w-full h-full object-cover"
                               />
@@ -593,20 +596,21 @@ const Orders = () => {
                           </Button>
                         )}
 
-                      {order.status?.toLowerCase() === "pending" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
-                          onClick={() => handleCancelOrder(order.order_id)}
-                          disabled={cancelling === order.order_id}
-                        >
-                          <XCircle className="w-4 h-4 mr-1.5" />
-                          {cancelling === order.order_id
-                            ? "Cancelling..."
-                            : "Cancel Order"}
-                        </Button>
-                      )}
+                      {order.status?.toLowerCase() === "pending" &&
+                        order.bank_transfer_details?.bank_payment_status !== 'REJECTED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+                            onClick={() => handleCancelOrder(order.order_id)}
+                            disabled={cancelling === order.order_id}
+                          >
+                            <XCircle className="w-4 h-4 mr-1.5" />
+                            {cancelling === order.order_id
+                              ? "Cancelling..."
+                              : "Cancel Order"}
+                          </Button>
+                        )}
 
                       {order.status?.toLowerCase() !== "cancelled" && (
                         <Button
