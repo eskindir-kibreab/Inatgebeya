@@ -22,7 +22,7 @@ const Checkout = () => {
     state: "",
     zipCode: "",
   });
-  const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
+  const [paymentMethod, setPaymentMethod] = useState("mobile_banking");
   const [orderNote, setOrderNote] = useState("");
 
   const subtotal = getCartTotal();
@@ -333,13 +333,8 @@ const Checkout = () => {
 
             <div className="space-y-4">
               {[
-                {
-                  id: "cash_on_delivery",
-                  label: "Cash on Delivery",
-                  icon: "💰",
-                },
-                { id: "bank_transfer", label: "Bank Transfer", icon: "🏦" },
                 { id: "mobile_banking", label: "Mobile Banking", icon: "📱" },
+                { id: "bank_transfer", label: "Bank Transfer", icon: "🏦" },
               ].map((method) => (
                 <div
                   key={method.id}

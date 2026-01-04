@@ -26,8 +26,8 @@ const registerValidation = [
     .withMessage("Enter valid name (Full name must be at least 6 characters and include a space)"),
   body("email").isEmail().withMessage("Valid email is required"),
   body("fan_number")
-    .isLength({ min: 16, max: 16 })
-    .withMessage("Fan number must be exactly 16 digits")
+    .isLength({ min: 14, max: 14 })
+    .withMessage("Fan number must be exactly 14 digits")
     .matches(/^\d+$/)
     .withMessage("it must be number"),
   body("password")

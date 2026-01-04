@@ -22,14 +22,14 @@ export const ORDER_STATUS = {
 export const DELIVERY_STATUS = {
   ASSIGNED: "assigned",
   PICKED: "picked",
+  SHIPPED: "shipped",
   DELIVERED: "delivered",
   RETURNED: "returned",
 };
 
 export const PAYMENT_METHODS = [
-  { value: "cash_on_delivery", label: "Cash on Delivery" },
-  { value: "bank_transfer", label: "Bank Transfer" },
   { value: "mobile_banking", label: "Mobile Banking" },
+  { value: "bank_transfer", label: "Bank Transfer" },
 ];
 
 export const CATEGORIES = [

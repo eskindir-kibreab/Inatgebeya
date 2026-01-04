@@ -68,11 +68,13 @@ export class UserService {
   static async getUserById(userId) {
     const [users] = await pool.query(
       `SELECT u.*, r.role_name, uc.balance as coins_balance,
-              ui.fan_number, ui.id_image_url
+              ui.fan_number, ui.id_image_url,
+              s.shop_id
        FROM Users u
        JOIN Roles r ON u.role_id = r.role_id
        LEFT JOIN UserCoins uc ON u.user_id = uc.user_id
        LEFT JOIN UserIdentifications ui ON u.user_id = ui.user_id
+       LEFT JOIN Shops s ON u.user_id = s.owner_id
        WHERE u.user_id = ?`,
       [userId]
     );
@@ -329,11 +331,12 @@ export class UserService {
       );
       return result.affectedRows;
     } else {
-      // Create a minimal record if it doesn't exist (though fan_number is normally required)
-      // Note: This helps backward compatibility for older users
+      // Create a minimal record if it doesn't exist
+      // Use a unique placeholder based on userId to avoid duplicate key errors
+      const uniquePlaceholder = `TEMP_ID_${userId}_${Date.now()}`;
       const [result] = await pool.query(
-        "INSERT INTO UserIdentifications (user_id, id_image_url, fan_number) VALUES (?, ?, 'NOT_PROVIDED')",
-        [userId, imageUrl]
+        "INSERT INTO UserIdentifications (user_id, id_image_url, fan_number) VALUES (?, ?, ?)",
+        [userId, imageUrl, uniquePlaceholder]
       );
       return result.affectedRows;
     }

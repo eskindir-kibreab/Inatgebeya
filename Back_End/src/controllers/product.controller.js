@@ -102,14 +102,16 @@ export const createProduct = async (req, res) => {
     });
   }
 
-  const { product_name, category_id, shop_id, price, description, stock } = req.body;
+  /* original `shop_id` from body will be ignored for shop owners */
+  let { product_name, category_id, shop_id, price, description, stock } = req.body;
 
-  // Check permissions for shop owner
+  // For shop owners, force shop_id to match their authenticated shop
   if (req.user.role_name === "shop_owner") {
-    if (parseInt(shop_id) !== req.user.shop_id) {
-      return res.status(403).json({
+    shop_id = req.user.shop_id;
+    if (!shop_id) {
+      return res.status(400).json({
         success: false,
-        message: "You can only create products for your own shop",
+        message: "Shop ID not found for this user. Please contact support.",
       });
     }
   }

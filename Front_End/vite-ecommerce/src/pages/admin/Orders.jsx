@@ -7,6 +7,7 @@ import AdminActiveFilters from "../../components/search/AdminActiveFilters";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
+import { getEffectiveOrderStatus } from "../../utils/orderStatus";
 
 const Orders = () => {
     const [orders, setOrders] = useState([]);
@@ -193,20 +194,15 @@ const Orders = () => {
                                         <td className="p-6 text-sm text-text-secondary dark:text-gray-400">{order.shop_name}</td>
                                         <td className="p-6 font-medium text-primary">ETB {Number(order.total).toLocaleString()}</td>
                                         <td className="p-6">
-                                            <OrderStatusBadge status={order.status} />
-                                            <div className="mt-1 text-xs">
-                                                <span className={`px-1.5 py-0.5 rounded ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                                    {order.payment_status?.toUpperCase()}
-                                                </span>
-                                            </div>
+                                            <OrderStatusBadge status={getEffectiveOrderStatus(order)} />
                                         </td>
                                         <td className="p-6 text-sm text-text-secondary dark:text-gray-400">
                                             {formatDate(order.created_at)}
                                         </td>
                                         <td className="p-6">
                                             <div className="flex items-center gap-1">
-                                                {/* Actions for Pending Orders */}
-                                                {(order.status === 'pending') && (
+                                                {/* Actions for Pending or Paid Orders */}
+                                                {['pending', 'paid'].includes(getEffectiveOrderStatus(order)) && (
                                                     <>
                                                         {order.payment_status === 'paid' && (
                                                             <button

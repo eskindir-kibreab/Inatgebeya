@@ -9,6 +9,7 @@ import AdminActiveFilters from "../../components/search/AdminActiveFilters";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
+import { getEffectiveOrderStatus } from "../../utils/orderStatus";
 
 const ShopOwnerOrders = () => {
     const [orders, setOrders] = useState([]);
@@ -199,7 +200,7 @@ const ShopOwnerOrders = () => {
                                             <div className="text-xs text-text-secondary">{order.delivery_address}</div>
                                         </td>
                                         <td className="p-4 font-medium text-primary">ETB {Number(order.total).toLocaleString()}</td>
-                                        <td className="p-4"><OrderStatusBadge status={order.status} /></td>
+                                        <td className="p-4"><OrderStatusBadge status={getEffectiveOrderStatus(order)} /></td>
                                         <td className="p-4 text-sm text-text-secondary">{formatDate(order.created_at)}</td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-2">

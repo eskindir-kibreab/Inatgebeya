@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   Search,
   Filter,
@@ -10,12 +11,15 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { productsAPI } from "../../api/products.api";
+import { categoriesAPI } from "../../api/categories.api";
+import { shopsAPI } from "../../api/shops.api";
 import Input from "../../components/forms/Input";
 import Button from "../../components/forms/Button";
 import Select from "../../components/forms/Select";
 import toast from "react-hot-toast";
 
 const ShopOwnerInventory = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,8 +34,9 @@ const ShopOwnerInventory = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [categories, setCategories] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [myShopId, setMyShopId] = useState(null);
+
+  // Removed internal edit modal state in favor of dedicated page
   const [formData, setFormData] = useState({
     product_name: "",
     category_id: "",
@@ -43,7 +48,28 @@ const ShopOwnerInventory = () => {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchMyShopDetails();
   }, [filters]);
+
+
+  const fetchMyShopDetails = async () => {
+    console.log("Creating FETCH_MY_SHOP request...");
+    try {
+      // Explicitly fetch shop details to get the correct shop_id
+      const response = await shopsAPI.getMyShop();
+      console.log("FETCH_MY_SHOP response:", response);
+      if (response.success && response.data) {
+        setMyShopId(response.data.shop_id);
+        console.log("Fetched Shop ID successfully:", response.data.shop_id);
+      } else {
+        console.warn("Fetched Shop ID failed:", response);
+        toast.error("Failed to verify shop ownership. Please check console.");
+      }
+    } catch (error) {
+      console.error("Failed to fetch shop details (catch):", error);
+      toast.error(`Error fetching shop details: ${error.message}`);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -82,42 +108,46 @@ const ShopOwnerInventory = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
 
+    // Basic validation
     if (parseFloat(formData.price) <= 0) {
       toast.error("The price must be a positive number");
       return;
     }
 
     try {
-      // In a real app, you would use the productsAPI.create method
-      // with the shop_id automatically set to the owner's shop
-      toast.success("Product added successfully");
-      setShowAddModal(false);
-      fetchProducts();
-      resetForm();
-    } catch (error) {
-      toast.error("Failed to add product");
-    }
-  };
+      // Build FormData for product creation
+      const submitData = new FormData();
+      Object.keys(formData).forEach((key) => {
+        if (formData[key] !== "" && formData[key] !== null) {
+          submitData.append(key, formData[key]);
+        }
+      });
 
-  const handleUpdateProduct = async (e) => {
-    e.preventDefault();
-    if (!selectedProduct) return;
+      // Use the explicitly fetched shop_id
+      // Fallback to user.shop_id if API fetch hasn't completed
+      const shopIdVal = myShopId || user?.shop_id;
 
-    if (parseFloat(formData.price) <= 0) {
-      toast.error("The price must be a positive number");
-      return;
-    }
+      if (!shopIdVal) {
+        toast.error("Could not verify Shop ID. Please try reloading the page.");
+        return;
+      }
 
-    try {
-      const response = await productsAPI.update(selectedProduct.id, formData);
+      submitData.append("shop_id", shopIdVal);
+
+      // Call backend create endpoint
+      const response = await productsAPI.create(submitData);
+
       if (response.success) {
-        toast.success("Product updated successfully");
-        setShowEditModal(false);
+        toast.success("Product added successfully");
+        setShowAddModal(false);
         fetchProducts();
         resetForm();
+      } else {
+        toast.error(response.message || "Failed to add product");
       }
     } catch (error) {
-      toast.error("Failed to update product");
+      console.error("Add product error:", error);
+      toast.error(error.response?.data?.message || "Failed to add product");
     }
   };
 
@@ -159,7 +189,6 @@ const ShopOwnerInventory = () => {
       description: "",
       stock: "",
     });
-    setSelectedProduct(null);
   };
 
   const categoryOptions = [
@@ -193,7 +222,7 @@ const ShopOwnerInventory = () => {
               Manage your shop's products and stock levels
             </p>
           </div>
-          <Button onClick={() => navigate("/coming-soon")} icon={Plus}>
+          <Button onClick={() => setShowAddModal(true)} icon={Plus}>
             Add Product
           </Button>
         </div>
@@ -220,7 +249,7 @@ const ShopOwnerInventory = () => {
               <button
                 onClick={() => handleFilterChange("stock_status", "out")}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 
-                         text-sm font-medium"
+                     text-sm font-medium"
               >
                 View Out of Stock
               </button>
@@ -245,7 +274,7 @@ const ShopOwnerInventory = () => {
               <button
                 onClick={() => handleFilterChange("stock_status", "low")}
                 className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 
-                         text-sm font-medium"
+                     text-sm font-medium"
               >
                 View Low Stock
               </button>
@@ -257,7 +286,7 @@ const ShopOwnerInventory = () => {
       {/* Filters */}
       <div
         className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
-                     dark:border-gray-700 p-6 mb-6"
+                 dark:border-gray-700 p-6 mb-6"
       >
         <form
           onSubmit={(e) => {
@@ -282,7 +311,7 @@ const ShopOwnerInventory = () => {
               type="button"
               onClick={() => setShowFilters(!showFilters)}
               className="px-4 py-3 border border-border-default rounded-lg 
-                       hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2"
+                   hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2"
             >
               <Filter className="w-5 h-5" />
               Filters
@@ -293,7 +322,7 @@ const ShopOwnerInventory = () => {
         {showFilters && (
           <div
             className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t 
-                         border-border-default dark:border-gray-700"
+                     border-border-default dark:border-gray-700"
           >
             <Select
               label="Category"
@@ -320,7 +349,7 @@ const ShopOwnerInventory = () => {
       {/* Products Table */}
       <div
         className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
-                     dark:border-gray-700 overflow-hidden"
+                 dark:border-gray-700 overflow-hidden"
       >
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -365,8 +394,8 @@ const ShopOwnerInventory = () => {
                   <tr
                     key={product.product_id}
                     className="border-b border-border-default 
-                                            dark:border-gray-700 hover:bg-bg-light 
-                                            dark:hover:bg-gray-700"
+                                        dark:border-gray-700 hover:bg-bg-light 
+                                        dark:hover:bg-gray-700"
                   >
                     <td className="p-6">
                       <div className="flex items-center gap-3">
@@ -403,11 +432,11 @@ const ShopOwnerInventory = () => {
                             )
                           }
                           className="w-20 px-3 py-1 border border-border-default 
-                                   dark:border-gray-700 rounded text-center bg-white dark:bg-white text-black"
+                               dark:border-gray-700 rounded text-center bg-white dark:bg-white text-black"
                         />
                         <span
                           className={`text-sm px-2 py-1 rounded-full
-                                       ${(product.stock || 0) === 0
+                                   ${(product.stock || 0) === 0
                               ? "bg-red-100 text-red-800 dark:bg-red-900/20"
                               : (product.stock || 0) < 10
                                 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20"
@@ -421,7 +450,7 @@ const ShopOwnerInventory = () => {
                     <td className="p-6">
                       <span
                         className={`px-3 py-1 rounded-full text-sm font-medium
-                                     ${(product.stock || 0) === 0
+                                 ${(product.stock || 0) === 0
                             ? "bg-red-100 text-red-800 dark:bg-red-900/20"
                             : product.is_active
                               ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
@@ -434,14 +463,14 @@ const ShopOwnerInventory = () => {
                     <td className="p-6">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => navigate("/coming-soon")}
+                          onClick={() => navigate(`/shop-owner/inventory/${product.product_id}`)}
                           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4 text-text-secondary" />
                         </button>
                         <button
-                          onClick={() => navigate("/coming-soon")}
+                          onClick={() => handleDeleteProduct(product.product_id)}
                           className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                           title="Delete"
                         >
@@ -488,7 +517,7 @@ const ShopOwnerInventory = () => {
                   }
                   disabled={pagination.page === 1}
                   className="px-4 py-2 border border-border-default rounded-lg 
-                           disabled:opacity-50 disabled:cursor-not-allowed"
+                       disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
@@ -498,7 +527,7 @@ const ShopOwnerInventory = () => {
                   }
                   disabled={pagination.page === pagination.totalPages}
                   className="px-4 py-2 border border-border-default rounded-lg 
-                           disabled:opacity-50 disabled:cursor-not-allowed"
+                       disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
@@ -571,8 +600,8 @@ const ShopOwnerInventory = () => {
                   }
                   rows={3}
                   className="w-full px-4 py-3 border border-border-default 
-                           dark:border-gray-700 rounded-lg focus:outline-none 
-                           focus:ring-2 focus:ring-accent resize-none bg-white dark:bg-white text-black"
+                       dark:border-gray-700 rounded-lg focus:outline-none 
+                       focus:ring-2 focus:ring-accent resize-none bg-white dark:bg-white text-black"
                 />
               </div>
               <div className="flex gap-3">
@@ -582,93 +611,6 @@ const ShopOwnerInventory = () => {
                 <Button
                   variant="secondary"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Product Modal */}
-      {showEditModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-text-main dark:text-gray-200 mb-6">
-              Edit Product
-            </h2>
-            <form onSubmit={handleUpdateProduct}>
-              <Input
-                label="Product Name"
-                value={formData.product_name}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    product_name: e.target.value,
-                  }))
-                }
-                required
-              />
-              <Select
-                label="Category"
-                value={formData.category_id}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    category_id: e.target.value,
-                  }))
-                }
-                options={categoryOptions.slice(1)}
-                required
-              />
-              <Input
-                label="Price (ETB)"
-                type="number"
-                value={formData.price}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, price: e.target.value }))
-                }
-                required
-              />
-              <Input
-                label="Stock Quantity"
-                type="number"
-                value={formData.stock}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, stock: e.target.value }))
-                }
-                required
-              />
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-text-main dark:text-gray-200 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  rows={3}
-                  className="w-full px-4 py-3 border border-border-default 
-                           dark:border-gray-700 rounded-lg focus:outline-none 
-                           focus:ring-2 focus:ring-accent resize-none bg-white dark:bg-white text-black"
-                />
-              </div>
-              <div className="flex gap-3">
-                <Button type="submit" className="flex-1">
-                  Update Product
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    resetForm();
-                  }}
                   className="flex-1"
                 >
                   Cancel

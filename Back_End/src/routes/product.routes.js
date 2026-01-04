@@ -33,7 +33,8 @@ const productValidation = [
     .isLength({ min: 3 })
     .withMessage("Product name must be at least 3 characters"),
   body("category_id").isInt().withMessage("Valid category ID is required"),
-  body("shop_id").isInt().withMessage("Valid shop ID is required"),
+  // shop_id is optional because it can be inferred from the logged-in user (for shop owners)
+  body("shop_id").optional().isInt().withMessage("Valid shop ID is required"),
   body("price").isFloat({ gt: 0 }).withMessage("The price must be a positive number"),
   body("description").optional().isString(),
   body("stock").optional().isInt({ min: 0 }).withMessage("Stock must be a non-negative integer"),

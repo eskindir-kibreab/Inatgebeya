@@ -27,6 +27,9 @@ const shopValidation = [
 
 // Routes
 
+// Shop owner routes - MUST be before /:id to avoid collision
+router.get("/my/shop", authMiddleware, requireRole("shop_owner"), getMyShop);
+
 // Public routes
 router.get(
   "/",
@@ -53,9 +56,6 @@ router.get(
 
 // Protected routes
 router.use(authMiddleware);
-
-// Shop owner routes
-router.get("/my/shop", requireRole("shop_owner"), getMyShop);
 
 // Admin routes
 router.post("/", requirePermission("admin"), shopValidation, createShop);

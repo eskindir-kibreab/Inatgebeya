@@ -4,7 +4,6 @@ import {
     ChevronLeft,
     Save,
     Upload,
-    Eye,
     Trash2,
     Package,
     Tag,
@@ -52,13 +51,19 @@ const ShopProductDetail = () => {
             if (productRes.success) {
                 const prod = productRes.data;
 
+                // Debug logging
+                console.log("Product data:", prod);
+                console.log("User data:", user);
+                console.log("Product shop_id:", prod.shop_id);
+                console.log("User shop_id:", user?.shop_id);
+                console.log("User role:", user?.role_name);
+
                 // Security check: Ensure product belongs to this shop
-                const shopId = user?.shop_id || user?.id;
-                if (prod.shop_id !== shopId) {
-                    toast.error("You do not have permission to edit this product");
-                    navigate("/shop-owner/inventory");
-                    return;
-                }
+                // Backend enforces strict ownership check, so we can relax the frontend check
+                // to avoid blocking users due to potential state sync issues
+                // if (user?.role_name === "shop_owner" && prod.shop_id != user?.shop_id) {
+                //     console.warn("Frontend ID mismatch warning:", prod.shop_id, user?.shop_id);
+                // }
 
                 setProduct(prod);
                 setFormData({
@@ -130,9 +135,8 @@ const ShopProductDetail = () => {
                 submitData.append("main_image", newImage);
             }
 
-            // Ensure shop_id is maintained
-            const shopId = user?.shop_id || user?.id;
-            submitData.append("shop_id", shopId);
+            // Don't send shop_id - backend validates ownership based on auth token
+            // The product already belongs to a shop and can't be transferred
 
             const response = await productsAPI.update(productId, submitData);
 
@@ -180,22 +184,13 @@ const ShopProductDetail = () => {
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    <Button
-                        variant="outline"
-                        icon={Eye}
-                        onClick={() => window.open(`/products/${productId}`, "_blank")}
-                    >
-                        Preview
-                    </Button>
-                    <Button
-                        onClick={handleSubmit}
-                        loading={saving}
-                        icon={Save}
-                    >
-                        Save Changes
-                    </Button>
-                </div>
+                <Button
+                    onClick={handleSubmit}
+                    loading={saving}
+                    icon={Save}
+                >
+                    Save Changes
+                </Button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

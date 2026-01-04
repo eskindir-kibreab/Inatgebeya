@@ -132,6 +132,8 @@ const DeliveryPersonDashboard = () => {
         return "bg-green-100 text-green-800 dark:bg-green-900/20";
       case "picked":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/20";
+      case "shipped":
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900/20";
       case "assigned":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20";
       case "returned":
@@ -146,6 +148,8 @@ const DeliveryPersonDashboard = () => {
       case "assigned":
         return { label: "Mark as Picked", action: "picked" };
       case "picked":
+        return { label: "Mark as Shipped", action: "shipped" };
+      case "shipped":
         return { label: "Mark as Delivered", action: "delivered" };
       default:
         return null;

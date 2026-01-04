@@ -26,8 +26,16 @@ export class OrderService {
     }
 
     if (status) {
-      query += " AND o.status = ?";
-      params.push(status);
+      if (status === 'paid') {
+        // Special case: "Paid" filter should show orders that are either status='paid' OR payment_status='paid'
+        query += " AND (o.\`status\` = 'paid' OR o.payment_status = 'paid')";
+      } else if (status === 'approved') {
+        // Map frontend 'approved' to both possible backend values
+        query += " AND o.\`status\` IN ('approved', 'ADMIN_APPROVED')";
+      } else {
+        query += " AND o.\`status\` = ?";
+        params.push(status);
+      }
     }
 
     if (start_date) {
@@ -38,6 +46,11 @@ export class OrderService {
     if (end_date) {
       query += " AND DATE(o.created_at) <= ?";
       params.push(end_date);
+    }
+
+    if (filters.search) {
+      query += " AND (o.order_id LIKE ? OR u.full_name LIKE ?)";
+      params.push(`%${filters.search}%`, `%${filters.search}%`);
     }
 
     // Get total count
@@ -154,7 +167,7 @@ export class OrderService {
 
       const [orderResult] = await connection.query(
         `INSERT INTO Orders (
-          user_id, shop_id, delivery_address, total, status, 
+          user_id, shop_id, delivery_address, total, \`status\`, 
           payment_method, payment_status, tax_amount, 
           commission_total, gateway_fee
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -287,13 +300,16 @@ export class OrderService {
 
       // Update the order status
       const finalStatus = status === "approved" ? "ADMIN_APPROVED" : status;
-      await connection.query(
-        "UPDATE Orders SET status = ? WHERE order_id = ?",
+      const [result] = await connection.query(
+        "UPDATE Orders SET `status` = ? WHERE order_id = ?",
         [finalStatus, orderId]
       );
 
+      console.log(finalStatus);
+
+
       await connection.commit();
-      return true;
+      return result.affectedRows;
     } catch (error) {
       await connection.rollback();
       throw error;
@@ -343,7 +359,7 @@ export class OrderService {
 
       // Update order status
       await connection.query(
-        'UPDATE Orders SET status = "cancelled" WHERE order_id = ?',
+        'UPDATE Orders SET `status` = "cancelled" WHERE order_id = ?',
         [orderId]
       );
 
@@ -414,7 +430,7 @@ export class OrderService {
        FROM Orders o
        JOIN Users u ON o.user_id = u.user_id
        WHERE o.shop_id = ? 
-       AND o.status IN ('ADMIN_APPROVED', 'approved', 'delivery_assigned', 'picked_up', 'shipped', 'delivered')
+       AND o.\`status\` IN ('ADMIN_APPROVED', 'approved', 'delivery_assigned', 'picked_up', 'shipped', 'delivered')
        ORDER BY o.created_at DESC
        LIMIT ? OFFSET ?`,
       [shopId, parseInt(limit), parseInt(offset)]
@@ -442,7 +458,7 @@ export class OrderService {
   static async requestReturn(orderItemId, returnReason) {
     // Check if order item exists and was delivered
     const [orderItems] = await pool.query(
-      `SELECT oi.*, o.status as order_status
+      `SELECT oi.*, o.\`status\` as order_status
        FROM OrderItems oi
        JOIN Orders o ON oi.order_id = o.order_id
        WHERE oi.order_item_id = ?`,

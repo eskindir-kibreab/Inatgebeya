@@ -18,6 +18,7 @@ import Button from "../../components/forms/Button";
 import ErrorState from "../../components/feedback/ErrorState";
 import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
 import toast from "react-hot-toast";
+import { getEffectiveOrderStatus } from "../../utils/orderStatus";
 
 const OrderDetail = () => {
     const { orderId } = useParams();
@@ -110,48 +111,30 @@ const OrderDetail = () => {
     };
 
     const getStatusSteps = () => {
-        const steps = [
-            { id: "pending", label: "Pending", icon: Package }, // Created
-            { id: "paid", label: "Paid", icon: CreditCard }, // Verified
-            { id: "admin_approved", label: "Approved", icon: CheckCircle }, // Admin Approved
-            { id: "delivery_assigned", label: "Assigned", icon: Truck }, // Delivery Assigned
-            { id: "picked_up", label: "Picked Up", icon: Package }, // Picked Up
-            { id: "delivered", label: "Delivered", icon: Home }, // Delivered
-        ];
-
-        // Map status to index
-        // Status might be 'ADMIN_APPROVED' in DB but we might normalize to lowercase in frontend or handle it here
-        const normalizedStatus = order?.status === 'ADMIN_APPROVED' ? 'admin_approved' : order?.status?.toLowerCase();
-
-        let currentStepIndex = steps.findIndex(step => step.id === normalizedStatus);
-
-        // Handle cases where steps might be skipped or intermediate states mapping
-        // e.g. 'shipped' -> map to 'picked_up' or 'assigned' if we lack a step? 
-        // But requested flow is strict.
-
-        // If status is 'shipped' (legacy/ShopOwner manual), it roughly equals 'picked_up' or between picked and delivered.
-        // Let's treat 'shipped' same as 'picked_up' for timeline if needed, or add it.
-        // The user spec said "Shipped" is after "Picked Up".
-        // The Spec: Pending -> Paid -> Approved -> Delivery Assigned -> Picked Up -> Shipped -> Delivered
-        // I missed 'Shipped' in the list above. Let's add it.
-
         const strictSteps = [
             { id: "pending", label: "Pending", icon: Package },
             { id: "paid", label: "Paid", icon: CreditCard },
-            { id: "admin_approved", label: "Approved", icon: CheckCircle },
-            { id: "delivery_assigned", label: "Assigned", icon: User },
+            { id: "approved", label: "Approved", icon: CheckCircle },
+            { id: "assigned", label: "Assigned", icon: User },
             { id: "picked_up", label: "Picked Up", icon: Package },
             { id: "shipped", label: "Shipped", icon: Truck },
             { id: "delivered", label: "Delivered", icon: Home },
         ];
 
-        // Recalculate index
-        let activeStatus = order?.status === 'ADMIN_APPROVED' ? 'admin_approved' : order?.status?.toLowerCase();
+        let currentStepIndex = 0;
+        const s = order?.status?.toLowerCase();
+        const ps = order?.payment_status?.toLowerCase();
+        const ds = order?.delivery_status?.toLowerCase();
 
-        // Compatibility: 'approved' -> 'admin_approved'
-        if (activeStatus === 'approved') activeStatus = 'admin_approved';
-
-        currentStepIndex = strictSteps.findIndex(step => step.id === activeStatus);
+        // Progressive logic to determine the furthest active step
+        if (s === 'pending') currentStepIndex = 0;
+        if (ps === 'paid') currentStepIndex = 1;
+        if (s === 'approved' || s === 'admin_approved') currentStepIndex = 2;
+        if (ds === 'assigned') currentStepIndex = 3;
+        if (ds === 'picked') currentStepIndex = 4;
+        if (ds === 'shipped' || s === 'delivering') currentStepIndex = 5;
+        if (s === 'delivered' || ds === 'delivered') currentStepIndex = 6;
+        if (s === 'completed') currentStepIndex = 6;
 
         return strictSteps.map((step, index) => ({
             ...step,
@@ -188,8 +171,8 @@ const OrderDetail = () => {
     const canPay = isUser && order.payment_method === "mobile_banking" && order.payment_status === "pending" && order.status !== "cancelled";
 
     // Admin can approve if payment is 'paid' but status is NOT yet approved/delivered/etc.
-    // Usually 'pending' status with 'paid' payment means it's waiting approval.
-    const canApprove = isAdmin && order.payment_status === "paid" && (order.status === "pending");
+    // Allow approval for 'pending' or empty/corrupted status if payment is made.
+    const canApprove = isAdmin && order.payment_status === "paid" && (order.status === "pending" || order.status === "");
 
     const canConfirm = isUser && order.status === "delivered";
 
@@ -208,6 +191,8 @@ const OrderDetail = () => {
             setActionLoading(false);
         }
     };
+
+
 
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
@@ -253,7 +238,7 @@ const OrderDetail = () => {
                     <div>
                         <h1 className="text-2xl font-bold text-text-main dark:text-gray-100 flex items-center gap-3">
                             Order #{order.order_id}
-                            <OrderStatusBadge status={order.status} />
+                            <OrderStatusBadge status={getEffectiveOrderStatus(order)} />
                         </h1>
                         <p className="text-text-secondary dark:text-gray-400 mt-1">
                             Placed on {formatDate(order.created_at)}

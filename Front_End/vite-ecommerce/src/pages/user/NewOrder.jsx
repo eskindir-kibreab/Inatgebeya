@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { ordersAPI } from "../../api/orders.api";
+import { paymentsAPI } from "../../api/payments.api";
 import { CheckCircle, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import CartSummary from "../../components/cart/CartSummary";
@@ -15,7 +16,7 @@ const NewOrder = () => {
 
   const [loading, setLoading] = useState(false);
   const [shippingAddress, setShippingAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
+  const [paymentMethod, setPaymentMethod] = useState("mobile_banking");
   const [orderNote, setOrderNote] = useState("");
 
   // Load user's default shipping address if available
@@ -83,12 +84,38 @@ const NewOrder = () => {
       const allSuccessful = responses.every((response) => response?.success);
 
       if (allSuccessful) {
-        // Clear the cart after successful order
-        clearCart();
+        // If it's a mobile banking order, we need to initialize Chapa
+        if (paymentMethod === "mobile_banking") {
+          toast.loading("Initializing secure payment...");
+          try {
+            // Initialize using the first order ID (assuming single payment session for multiple shop orders)
+            // Note: In a multi-vendor split, typically we pay only for one or handle split payments.
+            // Current implementation takes the first order.
+            const firstOrderId = responses[0].data.orderId || responses[0].data.id;
 
+            const payment = await paymentsAPI.initialize(firstOrderId);
+
+            if (payment.success && payment.data.checkout_url) {
+              clearCart();
+              window.location.href = payment.data.checkout_url;
+              return; // Stop execution as we are redirecting
+            } else {
+              throw new Error("Failed to get checkout URL from payment gateway");
+            }
+          } catch (payError) {
+            console.error("Payment init error:", payError);
+            const errMsg = payError.response?.data?.message || payError.message || "Payment initialization failed.";
+            toast.error(`Order created, but payment failed: ${errMsg}`);
+            // Fallback: navigate to orders page so user can retry payment from there
+            navigate("/orders");
+            return;
+          }
+        }
+
+        // Clear the cart after successful order (for non-payment methods)
+        clearCart();
         // Show success message
         toast.success("Order placed successfully!");
-
         // Redirect to orders page
         navigate("/orders");
       } else {
@@ -171,18 +198,18 @@ const NewOrder = () => {
                 <div className="space-y-3">
                   <div className="flex items-center">
                     <input
-                      id="cash-on-delivery"
+                      id="mobile-banking"
                       name="payment-method"
                       type="radio"
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600"
-                      checked={paymentMethod === "cash_on_delivery"}
-                      onChange={() => setPaymentMethod("cash_on_delivery")}
+                      checked={paymentMethod === "mobile_banking"}
+                      onChange={() => setPaymentMethod("mobile_banking")}
                     />
                     <label
-                      htmlFor="cash-on-delivery"
+                      htmlFor="mobile-banking"
                       className="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300"
                     >
-                      Cash on Delivery
+                      Mobile Banking
                     </label>
                   </div>
                   <div className="flex items-center">

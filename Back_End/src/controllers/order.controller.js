@@ -14,9 +14,10 @@ export const getAllOrders = async (req, res) => {
       status,
       start_date,
       end_date,
+      search,
     } = req.query;
 
-    const filters = { user_id, shop_id, status, start_date, end_date };
+    const filters = { user_id, shop_id, status, start_date, end_date, search };
 
     // Shop owner can only see their shop's orders
     if (req.user.role_name === "shop_owner") {
@@ -165,7 +166,7 @@ export const updateOrderStatus = async (req, res) => {
       "pending",
       "paid",
       "approved",
-      "ADMIN_APPROVED",
+      "admin_approved", // Changed to lowercase for consistency
       "delivery_assigned",
       "picked_up",
       "shipped",
@@ -174,7 +175,11 @@ export const updateOrderStatus = async (req, res) => {
       "completed",
       "cancelled",
     ];
-    if (!validStatuses.includes(status)) {
+
+    // Normalize status to lowercase for check
+    const normalizedStatus = status.toLowerCase();
+
+    if (!validStatuses.includes(normalizedStatus)) {
       return res.status(400).json({
         success: false,
         message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
@@ -219,7 +224,7 @@ export const updateOrderStatus = async (req, res) => {
       }
     }
 
-    const affectedRows = await OrderService.updateOrderStatus(id, status);
+    const affectedRows = await OrderService.updateOrderStatus(id, normalizedStatus);
 
     if (affectedRows === 0) {
       return res.status(404).json({

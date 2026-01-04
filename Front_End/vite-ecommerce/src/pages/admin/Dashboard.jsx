@@ -14,6 +14,8 @@ import { productsAPI } from "../../api/products.api";
 import { walletsAPI } from "../../api/wallets.api";
 import toast from "react-hot-toast";
 import { Check, X } from "lucide-react";
+import { getEffectiveOrderStatus } from "../../utils/orderStatus";
+import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -49,7 +51,10 @@ const AdminDashboard = () => {
 
       const orders = ordersRes.data || [];
       const pendingOrdersCount = orders.filter(
-        (order) => order.status === "pending" || order.status === "PAID"
+        (order) => {
+          const effective = getEffectiveOrderStatus(order);
+          return effective === 'pending' || effective === 'paid';
+        }
       ).length;
 
       const summary = summaryRes?.data || {
@@ -261,7 +266,7 @@ const AdminDashboard = () => {
                         ETB {order.total?.toLocaleString()}
                       </p>
                       <div className="flex items-center gap-2">
-                        {order.status === "PAID" && (
+                        {['pending', 'paid'].includes(getEffectiveOrderStatus(order)) && order.payment_status === 'paid' && (
                           <button
                             onClick={() => approveOrder(order.order_id)}
                             className="p-1.5 bg-green-100 text-green-700 hover:bg-green-200 
@@ -271,17 +276,7 @@ const AdminDashboard = () => {
                             <Check className="w-4 h-4" />
                           </button>
                         )}
-                        <span
-                          className={`inline-block px-2 py-1 text-xs rounded-full capitalize
-                                         ${order.status === "delivered" || order.status === "ADMIN_APPROVED"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                              : order.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                                : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                            }`}
-                        >
-                          {order.status}
-                        </span>
+                        <OrderStatusBadge status={getEffectiveOrderStatus(order)} />
                       </div>
                     </div>
                   </div>

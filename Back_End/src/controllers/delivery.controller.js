@@ -423,7 +423,7 @@ export const updateDeliveryStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ["assigned", "picked", "delivered", "returned"];
+    const validStatuses = ["assigned", "picked", "shipped", "delivered", "returned"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
