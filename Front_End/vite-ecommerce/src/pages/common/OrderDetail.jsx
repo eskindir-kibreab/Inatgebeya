@@ -345,7 +345,7 @@ const OrderDetail = () => {
                                                 {activeStep.label}
                                             </h3>
                                             <p className="mt-2 text-text-secondary dark:text-gray-400 max-w-xs mx-auto">
-                                                {isFailed ? "This order has been stopped and will not proceed further." :
+                                                {isFailed ? (order.bank_transfer_details?.rejection_reason || "This order has been stopped and will not proceed further.") :
                                                     activeStep.id === 'pending' ? "We've received your order and are waiting for payment." :
                                                         activeStep.id === 'paid' ? "Payment received! We're verifying the details now." :
                                                             activeStep.id === 'delivered' ? "Package delivered successfully. Enjoy your purchase!" :

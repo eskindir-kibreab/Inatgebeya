@@ -612,16 +612,7 @@ const Orders = () => {
                           </Button>
                         )}
 
-                      {order.status?.toLowerCase() !== "cancelled" && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => navigate(`/orders/${order.order_id || order.id}`)}
-                        >
-                          <Truck className="w-4 h-4 mr-1.5" />
-                          Track Order
-                        </Button>
-                      )}
+
 
                       {order.status?.toLowerCase() === "delivered" && (
                         <Button
