@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Edit, Trash2, UserPlus, Shield } from "lucide-react";
+import { Search, Edit, Trash2, UserPlus, Shield, MessageCircle } from "lucide-react";
 import { usersAPI } from "../../api/users.api";
 import Input from "../../components/forms/Input";
 import Button from "../../components/forms/Button";
@@ -7,7 +7,10 @@ import Select from "../../components/forms/Select";
 import AdminActiveFilters from "../../components/search/AdminActiveFilters";
 import toast from "react-hot-toast";
 
+import { useNavigate } from "react-router-dom";
+
 const Users = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -401,8 +404,16 @@ const Users = () => {
                         <button
                           onClick={() => handleEditUser(user)}
                           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                          title="Edit User"
                         >
                           <Edit className="w-4 h-4 text-text-secondary" />
+                        </button>
+                        <button
+                          onClick={() => navigate("/admin/messages", { state: { selectedUserId: user.user_id } })}
+                          className="p-2 hover:bg-primary/10 rounded-lg"
+                          title="Message User"
+                        >
+                          <MessageCircle className="w-4 h-4 text-primary" />
                         </button>
                         <button
                           onClick={() => handleDeleteUser(user.user_id)}

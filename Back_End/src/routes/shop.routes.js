@@ -9,6 +9,7 @@ import {
   getMyShop,
   getShopProducts,
   getShopAnalytics,
+  getSupportShop,
 } from "../controllers/shop.controller.js";
 import {
   authMiddleware,
@@ -31,6 +32,8 @@ const shopValidation = [
 router.get("/my/shop", authMiddleware, requireRole("shop_owner"), getMyShop);
 
 // Public routes
+router.get("/support", getSupportShop);
+
 router.get(
   "/",
   [

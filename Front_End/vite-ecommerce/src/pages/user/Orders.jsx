@@ -22,6 +22,7 @@ import {
   DollarSign,
   Smartphone,
   Wallet,
+  MessageCircle,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { ordersAPI, paymentsAPI } from "../../api";
@@ -31,6 +32,7 @@ import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
 import OrderDetailsModal from "../../components/orders/OrderDetailsModal";
 import { getEffectiveOrderStatus } from "../../utils/orderStatus";
 import { getImageUrl } from "../../utils/image";
+import ChatModal from "../../components/chat/ChatModal";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -61,6 +63,12 @@ const Orders = () => {
   const [cancelling, setCancelling] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  // Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatShopId, setChatShopId] = useState(null);
+  const [chatShopName, setChatShopName] = useState("");
+  const [chatOrderId, setChatOrderId] = useState(null);
 
   // Filters and pagination
   const [searchQuery, setSearchQuery] = useState("");
@@ -612,7 +620,23 @@ const Orders = () => {
                           </Button>
                         )}
 
-
+                      {/* Contact Shop Button */}
+                      {order.shop_id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-primary/50 text-primary hover:bg-primary/10"
+                          onClick={() => {
+                            setChatShopId(order.shop_id);
+                            setChatShopName(order.shop_name || "Shop");
+                            setChatOrderId(order.order_id);
+                            setIsChatOpen(true);
+                          }}
+                        >
+                          <MessageCircle className="w-4 h-4 mr-1.5" />
+                          Contact Shop
+                        </Button>
+                      )}
 
                       {order.status?.toLowerCase() === "delivered" && (
                         <Button
@@ -759,6 +783,15 @@ const Orders = () => {
         order={selectedOrder}
         onCancelOrder={handleCancelOrder}
         cancelling={cancelling}
+      />
+
+      {/* Chat Modal */}
+      <ChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        shopId={chatShopId}
+        shopName={chatShopName}
+        orderId={chatOrderId}
       />
     </div >
   );

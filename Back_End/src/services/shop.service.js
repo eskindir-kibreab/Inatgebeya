@@ -237,4 +237,73 @@ export class ShopService {
     const [shops] = await pool.query(query, params);
     return shops.length > 0;
   }
+
+  // Get or Create Support Shop
+  static async getOrCreateSupportShop() {
+    try {
+      // 1. Check if Support Shop exists
+      const [existingShop] = await pool.query(
+        "SELECT * FROM Shops WHERE shop_name = 'InatGebeya Support'"
+      );
+
+      if (existingShop.length > 0) {
+        return existingShop[0];
+      }
+
+      console.log("Creating Support Shop...");
+
+      // 2. If not, find an Admin User to own it
+      const [admins] = await pool.query(
+        `SELECT user_id FROM Users u 
+         JOIN Roles r ON u.role_id = r.role_id 
+         WHERE r.role_name IN ('admin', 'super_admin') 
+         LIMIT 1`
+      );
+
+      let ownerId;
+      if (admins.length > 0) {
+        ownerId = admins[0].user_id;
+      } else {
+        // Fallback: Find ANY valid user to own the shop
+        const [users] = await pool.query("SELECT user_id FROM Users LIMIT 1");
+        if (users.length > 0) {
+          ownerId = users[0].user_id;
+          console.log("No Admin found. Assigning Support Shop to User ID:", ownerId);
+        } else {
+          console.error("No users found to assign shop ownership.");
+          throw new Error("Cannot create Support Shop: No users exist in database.");
+        }
+      }
+
+      // 3. Get a valid Area ID (fallback to 1)
+      const [areas] = await pool.query("SELECT area_id FROM Areas LIMIT 1");
+      let areaId;
+      if (areas.length > 0) {
+        areaId = areas[0].area_id;
+      } else {
+        console.log("No areas found. Creating default area 'Headquarters'...");
+        const [areaResult] = await pool.query("INSERT INTO Areas (area_name) VALUES ('Headquarters')");
+        areaId = areaResult.insertId;
+      }
+
+      // 4. Create the shop
+      const [result] = await pool.query(
+        "INSERT INTO Shops (shop_name, owner_id, area_id) VALUES (?, ?, ?)",
+        ["InatGebeya Support", ownerId, areaId]
+      );
+
+      console.log(`Support Shop created with ID: ${result.insertId}, Owner: ${ownerId}, Area: ${areaId}`);
+
+      // Return the new shop
+      return {
+        shop_id: result.insertId,
+        shop_name: "InatGebeya Support",
+        owner_id: ownerId,
+        area_id: areaId
+      };
+    } catch (err) {
+      console.error("Critical Error in getOrCreateSupportShop:", err);
+      throw err;
+    }
+  }
 }

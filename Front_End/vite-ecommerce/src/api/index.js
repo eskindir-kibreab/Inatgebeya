@@ -9,4 +9,5 @@ export * from "./delivery.api";
 export * from "./payments.api";
 export * from "./wallets.api";
 export * from "./bankTransfer.api";
+export * from "./chat.api";
 export { default as api } from "./axios";

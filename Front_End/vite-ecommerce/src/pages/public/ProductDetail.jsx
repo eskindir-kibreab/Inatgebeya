@@ -8,7 +8,8 @@ import {
   ChevronLeft,
   MessageSquare,
   Send,
-  User as UserIcon
+  User as UserIcon,
+  MessageCircle
 } from "lucide-react";
 import { productsAPI } from "../../api/products.api";
 import { useCart } from "../../context/CartContext";
@@ -19,6 +20,7 @@ import Button from "../../components/forms/Button";
 import ErrorState from "../../components/feedback/ErrorState";
 import toast from "react-hot-toast";
 import { getImageUrl } from "../../utils/image";
+import ChatModal from "../../components/chat/ChatModal";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -38,6 +40,9 @@ const ProductDetail = () => {
   const [userReview, setUserReview] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
   const [activeTab, setActiveTab] = useState("description"); // "description" or "reviews"
+
+  // Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -311,19 +316,34 @@ const ProductDetail = () => {
 
           {/* Shop Card */}
           {product.shop_name && (
-            <div className="mb-8 p-4 border border-border-default dark:border-gray-700 rounded-xl flex items-center gap-4 group cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(`/shops/${product.shop_id}`)}>
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-xl shadow-inner">
-                🏪
+            <div className="mb-8 p-4 border border-border-default dark:border-gray-700 rounded-xl flex items-center gap-4 group hover:border-primary/50 transition-colors">
+              <div className="flex-1 flex items-center gap-4 cursor-pointer" onClick={() => navigate(`/shops/${product.shop_id}`)}>
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-xl shadow-inner">
+                  🏪
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-text-secondary dark:text-gray-400 font-medium uppercase tracking-wider">
+                    Verified Shop
+                  </p>
+                  <p className="font-bold text-lg text-text-main dark:text-gray-200 group-hover:text-primary transition-colors">
+                    {product.shop_name}
+                  </p>
+                </div>
+                <ChevronLeft className="w-5 h-5 text-text-muted rotate-180 group-hover:translate-x-1 transition-transform" />
               </div>
-              <div className="flex-1">
-                <p className="text-xs text-text-secondary dark:text-gray-400 font-medium uppercase tracking-wider">
-                  Verified Shop
-                </p>
-                <p className="font-bold text-lg text-text-main dark:text-gray-200 group-hover:text-primary transition-colors">
-                  {product.shop_name}
-                </p>
-              </div>
-              <ChevronLeft className="w-5 h-5 text-text-muted rotate-180 group-hover:translate-x-1 transition-transform" />
+              {/* Contact Shop Button */}
+              {isAuthenticated && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsChatOpen(true);
+                  }}
+                  className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg flex items-center gap-2 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Contact
+                </button>
+              )}
             </div>
           )}
 
@@ -591,51 +611,61 @@ const ProductDetail = () => {
       </div>
 
       {/* Related Products */}
-      {relatedProducts.length > 0 && (
-        <div className="mt-20 pt-12 border-t border-border-default dark:border-gray-700">
-          <div className="flex items-center justify-between mb-10">
-            <h2 className="text-3xl font-extrabold text-text-main dark:text-gray-200 tracking-tight">
-              You May Also Like
-            </h2>
-            <button className="text-primary font-bold hover:underline" onClick={() => navigate(`/search?category=${product.category_id}`)}>
-              Explore All →
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {relatedProducts.map((p) => (
-              <div
-                key={p.id || p.product_id}
-                onClick={() => navigate(`/products/${p.product_id || p.id}`)}
-                className="group bg-white dark:bg-gray-800 border border-border-default 
+      {
+        relatedProducts.length > 0 && (
+          <div className="mt-20 pt-12 border-t border-border-default dark:border-gray-700">
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-3xl font-extrabold text-text-main dark:text-gray-200 tracking-tight">
+                You May Also Like
+              </h2>
+              <button className="text-primary font-bold hover:underline" onClick={() => navigate(`/search?category=${product.category_id}`)}>
+                Explore All →
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {relatedProducts.map((p) => (
+                <div
+                  key={p.id || p.product_id}
+                  onClick={() => navigate(`/products/${p.product_id || p.id}`)}
+                  className="group bg-white dark:bg-gray-800 border border-border-default 
                          dark:border-gray-700 rounded-2xl p-4 hover:shadow-2xl 
                          hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden"
-              >
-                <div className="aspect-square rounded-xl overflow-hidden mb-4 bg-bg-light dark:bg-gray-900">
-                  <img
-                    src={getImageUrl(p.main_image)}
-                    alt={p.product_name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-                <h3 className="font-bold text-text-main dark:text-gray-200 mb-2 truncate group-hover:text-primary transition-colors">
-                  {p.product_name}
-                </h3>
-                <div className="flex items-center justify-between">
-                  <span className="text-xl font-black text-price">
-                    ETB {p.price}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-accent text-accent" />
-                    <span className="text-xs font-bold text-text-muted">
-                      {Number(p.average_rating || p.avg_rating || 0).toFixed(1)}
+                >
+                  <div className="aspect-square rounded-xl overflow-hidden mb-4 bg-bg-light dark:bg-gray-900">
+                    <img
+                      src={getImageUrl(p.main_image)}
+                      alt={p.product_name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+                  <h3 className="font-bold text-text-main dark:text-gray-200 mb-2 truncate group-hover:text-primary transition-colors">
+                    {p.product_name}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl font-black text-price">
+                      ETB {p.price}
                     </span>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 fill-accent text-accent" />
+                      <span className="text-xs font-bold text-text-muted">
+                        {Number(p.average_rating || p.avg_rating || 0).toFixed(1)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+      {/* Chat Modal */}
+      <ChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        shopId={product?.shop_id}
+        shopName={product?.shop_name}
+        productId={product?.product_id}
+      />
     </div>
   );
 };

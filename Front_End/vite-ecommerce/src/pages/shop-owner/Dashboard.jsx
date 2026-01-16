@@ -6,6 +6,7 @@ import {
   Users,
   Package,
   Activity,
+  MessageCircle,
 } from "lucide-react";
 import { shopsAPI, ordersAPI, productsAPI, walletsAPI } from "../../api";
 import { Wallet, CreditCard, History } from "lucide-react";
@@ -380,6 +381,16 @@ const ShopOwnerDashboard = () => {
               >
                 <ShoppingBag className="w-6 h-6 text-primary mx-auto mb-2" />
                 <p className="font-medium text-sm">Process Orders</p>
+              </button>
+
+              <button
+                onClick={() => (window.location.href = "/shop-owner/messages")}
+                className="p-4 border border-border-default dark:border-gray-700 
+                         rounded-lg hover:border-primary hover:bg-primary/5 
+                         transition-colors text-center"
+              >
+                <MessageCircle className="w-6 h-6 text-primary mx-auto mb-2" />
+                <p className="font-medium text-sm">Messages</p>
               </button>
 
               <button

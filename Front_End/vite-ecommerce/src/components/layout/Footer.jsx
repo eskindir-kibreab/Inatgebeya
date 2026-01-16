@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Facebook,
   Twitter,
@@ -11,6 +11,8 @@ import {
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/shop-owner');
 
   return (
     <footer className="bg-bg-dark text-white mt-20">
@@ -53,22 +55,26 @@ const Footer = () => {
                   Home
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/search"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  Browse Products
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/cart"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  Shopping Cart
-                </Link>
-              </li>
+              {!isAdminPath && (
+                <>
+                  <li>
+                    <Link
+                      to="/search"
+                      className="text-gray-300 hover:text-white transition-colors"
+                    >
+                      Browse Products
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/cart"
+                      className="text-gray-300 hover:text-white transition-colors"
+                    >
+                      Shopping Cart
+                    </Link>
+                  </li>
+                </>
+              )}
               <li>
                 <Link
                   to="/profile"
@@ -92,14 +98,16 @@ const Footer = () => {
                   About Us
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/contact"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  Contact Us
-                </Link>
-              </li>
+              {!isAdminPath && (
+                <li>
+                  <Link
+                    to="/contact"
+                    className="text-gray-300 hover:text-white transition-colors"
+                  >
+                    Contact Us
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link
                   to="/privacy"

@@ -258,3 +258,13 @@ export const getShopAnalytics = async (req, res) => {
     });
   }
 };
+// Get Support Shop
+export const getSupportShop = async (req, res) => {
+  try {
+    const shop = await ShopService.getOrCreateSupportShop();
+    res.json({ success: true, data: shop });
+  } catch (error) {
+    console.error("Get support shop error:", error);
+    res.status(500).json({ success: false, message: "Failed to get support shop" });
+  }
+};

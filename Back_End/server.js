@@ -23,6 +23,7 @@ import deliveryRoutes from "./src/routes/delivery.routes.js";
 import paymentRoutes from "./src/routes/payment.routes.js";
 import walletRoutes from "./src/routes/wallet.routes.js";
 import bankTransferRoutes from "./src/routes/bankTransfer.routes.js";
+import chatRoutes from "./src/routes/chat.routes.js";
 
 const app = express();
 
@@ -86,6 +87,7 @@ app.use("/api/delivery", deliveryRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/wallets", walletRoutes);
 app.use("/api/bank-transfer", bankTransferRoutes);
+app.use("/api/chat", chatRoutes);
 
 /* ===============================
    Health Check

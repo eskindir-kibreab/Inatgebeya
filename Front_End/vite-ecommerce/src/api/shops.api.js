@@ -24,4 +24,7 @@ export const shopsAPI = {
 
   // Get shop analytics
   getAnalytics: (id) => api.get(`/shops/${id}/analytics`),
+
+  // Get support shop
+  getSupportShop: () => api.get("/shops/support"),
 };

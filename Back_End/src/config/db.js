@@ -140,6 +140,25 @@ pool
       }
 
       console.log("✅ Marketplace financial tables verified");
+
+      // 6. Messages Table for Chat Feature
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS Messages (
+          message_id INT AUTO_INCREMENT PRIMARY KEY,
+          sender_id INT NOT NULL,
+          receiver_id INT NOT NULL,
+          shop_id INT NOT NULL,
+          order_id INT NULL,
+          product_id INT NULL,
+          message TEXT NOT NULL,
+          is_read BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (sender_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+          FOREIGN KEY (receiver_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+          FOREIGN KEY (shop_id) REFERENCES Shops(shop_id) ON DELETE CASCADE
+        )
+      `);
+      console.log("✅ Messages table verified");
     } catch (schemaError) {
       console.error("❌ Schema synchronization failed:", schemaError.message);
     }

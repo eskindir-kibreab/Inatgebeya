@@ -20,6 +20,7 @@ const PrivacyPolicy = lazy(() => import("../pages/public/PrivacyPolicy.jsx"));
 const TermsAndConditions = lazy(() =>
   import("../pages/public/TermsAndConditions.jsx")
 );
+const Contact = lazy(() => import("../pages/public/Contact.jsx"));
 
 // User pages
 const Cart = lazy(() => import("../pages/user/Cart.jsx"));
@@ -27,6 +28,7 @@ const Checkout = lazy(() => import("../pages/user/Checkout.jsx"));
 const OrderDetail = lazy(() => import("../pages/common/OrderDetail.jsx"));
 const Profile = lazy(() => import("../pages/user/Profile.jsx"));
 const Orders = lazy(() => import("../pages/user/Orders.jsx"));
+const UserMessages = lazy(() => import("../pages/user/UserMessages.jsx"));
 const NewOrder = lazy(() => import("../pages/user/NewOrder.jsx"));
 const PaymentSuccess = lazy(() => import("../pages/user/PaymentSuccess.jsx"));
 
@@ -45,6 +47,7 @@ const AdminShops = lazy(() => import("../pages/admin/Shops.jsx"));
 const AdminAreas = lazy(() => import("../pages/admin/Areas.jsx"));
 const AdminOrders = lazy(() => import("../pages/admin/Orders.jsx"));
 const AdminBankTransfers = lazy(() => import("../pages/admin/BankTransferManagement.jsx"));
+const AdminMessages = lazy(() => import("../pages/admin/AdminMessages.jsx"));
 
 // Shop Owner pages
 const ShopOwnerDashboard = lazy(() =>
@@ -58,6 +61,9 @@ const ShopOwnerProducts = lazy(() =>
 );
 const ShopOwnerProductDetail = lazy(() =>
   import("../pages/shop-owner/ShopProductDetail.jsx")
+);
+const ShopOwnerMessages = lazy(() =>
+  import("../pages/shop-owner/Messages.jsx")
 );
 
 // Delivery Admin pages (keeping these for backward compatibility)
@@ -131,7 +137,7 @@ const AppRoutes = () => {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsAndConditions />} />
-        <Route path="/contact" element={<ComingSoon />} />
+        <Route path="/contact" element={<Contact />} />
 
         <Route path="/search" element={<Search />} />
         <Route path="/shops/:shopId" element={<Shop />} />
@@ -175,6 +181,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Orders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <UserMessages />
             </ProtectedRoute>
           }
         />
@@ -326,6 +340,14 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/shop-owner/messages"
+          element={
+            <ProtectedRoute roles={["shop_owner"]}>
+              <ShopOwnerMessages />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Delivery Management Routes - Now under Admin */}
         <Route
@@ -341,6 +363,15 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute roles={["admin", "super_admin"]}>
               <AdminAssign />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/messages"
+          element={
+            <ProtectedRoute roles={["admin", "super_admin"]}>
+              <AdminMessages />
             </ProtectedRoute>
           }
         />

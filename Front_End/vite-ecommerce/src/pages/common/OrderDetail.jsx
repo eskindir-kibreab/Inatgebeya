@@ -17,7 +17,8 @@ import {
     User,
     Home,
     DollarSign,
-    ArrowLeft
+    ArrowLeft,
+    MessageCircle
 } from "lucide-react";
 import { ordersAPI } from "../../api/orders.api";
 import { paymentsAPI } from "../../api/payments.api";
@@ -28,6 +29,7 @@ import OrderStatusBadge from "../../components/orders/OrderStatusBadge";
 import toast from "react-hot-toast";
 import { getEffectiveOrderStatus } from "../../utils/orderStatus";
 import { getImageUrl } from "../../utils/image";
+import ChatModal from "../../components/chat/ChatModal";
 
 const OrderDetail = () => {
     const { orderId } = useParams();
@@ -38,6 +40,9 @@ const OrderDetail = () => {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
+
+    // Chat state
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     const isAdmin = ["admin", "super_admin"].includes(user?.role_name);
     const isShopOwner = user?.role_name === "shop_owner";
@@ -250,6 +255,17 @@ const OrderDetail = () => {
                             Confirm Receipt
                         </Button>
                     )}
+                    {/* Contact Shop Button */}
+                    {isUser && order?.shop_id && (
+                        <Button
+                            variant="outline"
+                            className="border-primary/50 text-primary hover:bg-primary/10"
+                            onClick={() => setIsChatOpen(true)}
+                        >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Contact Shop
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -457,6 +473,15 @@ const OrderDetail = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Chat Modal */}
+            <ChatModal
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+                shopId={order?.shop_id}
+                shopName={order?.shop_name}
+                orderId={order?.order_id}
+            />
         </div>
     );
 };
