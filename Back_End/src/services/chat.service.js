@@ -9,7 +9,21 @@ export class ChatService {
             [senderId, receiverId, shopId, orderId, productId, message]
         );
 
-        return result.insertId;
+        const messageId = result.insertId;
+
+        // Get the full message object to return
+        const [messages] = await pool.query(
+            `SELECT m.*, 
+              sender.full_name as sender_name,
+              receiver.full_name as receiver_name
+       FROM Messages m
+       JOIN Users sender ON m.sender_id = sender.user_id
+       JOIN Users receiver ON m.receiver_id = receiver.user_id
+       WHERE m.message_id = ?`,
+            [messageId]
+        );
+
+        return messages[0];
     }
 
     // Get conversation between user and shop owner for a specific shop

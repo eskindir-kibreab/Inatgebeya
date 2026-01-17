@@ -14,9 +14,11 @@ import {
     CheckCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSocket } from "../../context/SocketContext";
 
 const Messages = () => {
     const { user } = useAuth();
+    const socket = useSocket();
     const [shop, setShop] = useState(null);
     const [conversations, setConversations] = useState([]);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -35,6 +37,55 @@ const Messages = () => {
     useEffect(() => {
         fetchShop();
     }, []);
+
+    // Socket listener for real-time messages
+    useEffect(() => {
+        if (socket && shop) {
+            const handleMessage = (msg) => {
+                // 1. If it's the current selected customer, add to messages
+                if (selectedCustomer &&
+                    (msg.sender_id == selectedCustomer.customer_id || msg.receiver_id == selectedCustomer.customer_id) &&
+                    msg.shop_id == shop.shop_id) {
+                    setMessages((prev) => [...prev, msg]);
+                }
+
+                // 2. Update the conversations list
+                setConversations((prev) => {
+                    const customerId = msg.sender_id == shop.owner_id ? msg.receiver_id : msg.sender_id;
+                    const existingConvIndex = prev.findIndex(c => c.customer_id == customerId);
+
+                    if (existingConvIndex !== -1) {
+                        const newConvs = [...prev];
+                        const conv = { ...newConvs[existingConvIndex] };
+                        conv.last_message = msg.message;
+                        conv.last_message_at = msg.created_at;
+
+                        // Increment unread count if it's from customer and not currently selected
+                        if (msg.sender_id != shop.owner_id && (!selectedCustomer || selectedCustomer.customer_id != customerId)) {
+                            conv.unread_count = (conv.unread_count || 0) + 1;
+                        }
+
+                        // Move to top
+                        newConvs.splice(existingConvIndex, 1);
+                        newConvs.unshift(conv);
+                        return newConvs;
+                    } else {
+                        // If it's a new conversation, we might need a fetch or manually add
+                        // For simplicity, let's just fetch for now if it's a new one, or leave it for refresh
+                        // but usually it's better to fetch conversations again
+                        fetchConversations(shop.shop_id);
+                        return prev;
+                    }
+                });
+            };
+
+            socket.on("receive_message", handleMessage);
+
+            return () => {
+                socket.off("receive_message", handleMessage);
+            };
+        }
+    }, [socket, shop, selectedCustomer]);
 
     useEffect(() => {
         scrollToBottom();

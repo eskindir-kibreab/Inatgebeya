@@ -1,4 +1,5 @@
 import { ChatService } from "../services/chat.service.js";
+import { emitToUser } from "../config/socket.js";
 
 export class ChatController {
     // Send a message
@@ -38,7 +39,7 @@ export class ChatController {
                 // finalReceiverId remains = receiverId (which is the shop owner/sender themselves)
             }
 
-            const messageId = await ChatService.sendMessage(
+            const newMessage = await ChatService.sendMessage(
                 finalSenderId,
                 finalReceiverId,
                 shopId,
@@ -47,10 +48,13 @@ export class ChatController {
                 productId || null
             );
 
+            // Emit the message via socket
+            emitToUser(finalReceiverId, "receive_message", newMessage);
+
             res.status(201).json({
                 success: true,
                 message: "Message sent successfully",
-                data: { messageId }
+                data: { messageId: newMessage.message_id, message: newMessage }
             });
         } catch (error) {
             console.error("Send message error:", error);

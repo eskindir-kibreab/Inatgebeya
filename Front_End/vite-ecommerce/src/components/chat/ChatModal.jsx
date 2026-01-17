@@ -3,6 +3,7 @@ import { X, Send, Loader2, MessageCircle, Store, Check, CheckCheck } from "lucid
 import { chatAPI } from "../../api/chat.api";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
+import { useSocket } from "../../context/SocketContext";
 
 const ChatModal = ({
     isOpen,
@@ -13,6 +14,7 @@ const ChatModal = ({
     productId = null,
 }) => {
     const { user } = useAuth();
+    const socket = useSocket();
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [loading, setLoading] = useState(false);
@@ -28,6 +30,24 @@ const ChatModal = ({
             fetchMessages();
         }
     }, [isOpen, shopId]);
+
+    // Socket listener for real-time messages
+    useEffect(() => {
+        if (socket) {
+            const handleMessage = (msg) => {
+                // Check if the message belongs to this conversation
+                if (msg.shop_id == shopId) {
+                    setMessages((prev) => [...prev, msg]);
+                }
+            };
+
+            socket.on("receive_message", handleMessage);
+
+            return () => {
+                socket.off("receive_message", handleMessage);
+            };
+        }
+    }, [socket, shopId]);
 
     useEffect(() => {
         scrollToBottom();

@@ -25,7 +25,11 @@ import walletRoutes from "./src/routes/wallet.routes.js";
 import bankTransferRoutes from "./src/routes/bankTransfer.routes.js";
 import chatRoutes from "./src/routes/chat.routes.js";
 
+import http from "http";
+import { initSocket } from "./src/config/socket.js";
+
 const app = express();
+const server = http.createServer(app);
 
 /* ===============================
    Security & Core Middleware
@@ -127,9 +131,11 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 const SERVER_IP = process.env.SERVER_IP || "localhost";
 
-app.listen(PORT, "0.0.0.0", () => {
+initSocket(server);
+
+server.listen(PORT, "0.0.0.0", () => {
   console.log("====================================");
-  console.log(`🚀 Server running`);
+  console.log(`🚀 Server running with Socket.io`);
   console.log(`🌐 API: http://${SERVER_IP}:${PORT}`);
   console.log(`🖥 Frontend Allowed: ${process.env.FRONTEND_URL}`);
   console.log(`📁 Uploads: ${uploadsPath}`);

@@ -58,13 +58,17 @@ const AppLayout = () => {
   );
 };
 
+import { SocketProvider } from "./context/SocketContext";
+
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <CartProvider>
-          <AppLayout />
-        </CartProvider>
+        <SocketProvider>
+          <CartProvider>
+            <AppLayout />
+          </CartProvider>
+        </SocketProvider>
       </AuthProvider>
     </ThemeProvider>
   );
