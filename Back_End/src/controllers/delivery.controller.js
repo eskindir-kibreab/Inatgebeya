@@ -421,7 +421,7 @@ export const assignDelivery = async (req, res) => {
 export const updateDeliveryStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, pin } = req.body;
 
     const validStatuses = ["assigned", "picked", "shipped", "delivered", "returned"];
     if (!validStatuses.includes(status)) {
@@ -450,7 +450,8 @@ export const updateDeliveryStatus = async (req, res) => {
     const affectedRows = await DeliveryService.updateDeliveryStatus(
       id,
       status,
-      deliveryPersonId
+      deliveryPersonId,
+      pin
     );
 
     if (affectedRows === 0) {
@@ -466,6 +467,21 @@ export const updateDeliveryStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Update delivery status error:", error);
+
+    const clientErrors = [
+      "Invalid delivery verification PIN. Please ask the customer for the correct 6-digit code.",
+      "Cannot pick up order. It must be assigned or approved first.",
+      "Cannot mark delivered. Order must be 'Picked Up' first.",
+      "Order not found"
+    ];
+
+    if (clientErrors.includes(error.message)) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to update delivery status",

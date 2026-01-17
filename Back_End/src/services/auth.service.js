@@ -192,10 +192,11 @@ const parseJWTExpiresMs = (expiresStr) => {
 // ------------------ LOGIN ------------------
 export const loginUserService = async ({ email, password }, meta = {}) => {
   const [users] = await pool.query(
-    `SELECT u.*, r.role_name, s.shop_id 
+    `SELECT u.*, r.role_name, s.shop_id, dp.delivery_person_id
      FROM Users u 
      JOIN Roles r ON u.role_id = r.role_id 
      LEFT JOIN Shops s ON u.user_id = s.owner_id
+     LEFT JOIN DeliveryPersons dp ON u.user_id = dp.user_id
      WHERE u.email = ?`,
     [email]
   );

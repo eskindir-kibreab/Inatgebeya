@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import { BankTransferService } from "./bankTransfer.service.js";
+import { WalletService } from "./wallet.service.js";
 
 export class OrderService {
   // Get all orders with filters
@@ -55,8 +56,10 @@ export class OrderService {
     }
 
     // Get total count
+    // Get total count
+    // Replace the specific SELECT clause we defined at the top
     const countQuery = query.replace(
-      /SELECT o\.\*, o\.order_id as id, u\.full_name as customer_name, s\.shop_name/,
+      "SELECT o.*, u.full_name as customer_name, s.shop_name",
       "SELECT COUNT(*) as total"
     );
     const [countResult] = await pool.query(countQuery, params);
@@ -87,7 +90,7 @@ export class OrderService {
   // Get order by ID
   static async getOrderById(orderId) {
     const [orders] = await pool.query(
-      `SELECT o.*, o.order_id as id, u.full_name as customer_name, u.email as customer_email, 
+      `SELECT o.*, o.order_id as id, u.full_name as customer_name, u.email as customer_email, u.phone as customer_phone,
               s.shop_name, s.shop_id, a.area_name
        FROM Orders o
        JOIN Users u ON o.user_id = u.user_id
@@ -109,10 +112,12 @@ export class OrderService {
     // Get delivery info if exists
     const [delivery] = await pool.query(
       `SELECT do.*, dp.delivery_person_id, u.full_name as delivery_person_name
-       FROM DeliveryOrders do
-       JOIN DeliveryPersons dp ON do.delivery_person_id = dp.delivery_person_id
-       JOIN Users u ON dp.user_id = u.user_id
-       WHERE do.order_id = ?`,
+        FROM DeliveryOrders do
+        JOIN DeliveryPersons dp ON do.delivery_person_id = dp.delivery_person_id
+        JOIN Users u ON dp.user_id = u.user_id
+        WHERE do.order_id = ?
+        ORDER BY do.delivery_id DESC
+        LIMIT 1`,
       [orderId]
     );
     order.delivery = delivery.length > 0 ? delivery[0] : null;
@@ -160,17 +165,18 @@ export class OrderService {
       // Create order
       const initialStatus = "pending";
       const paymentStatus = "pending";
+      const deliveryPin = Math.floor(100000 + Math.random() * 900000).toString();
 
       const [orderResult] = await connection.query(
         `INSERT INTO Orders (
           user_id, shop_id, delivery_address, total, \`status\`, 
           payment_method, payment_status, tax_amount, 
-          commission_total, gateway_fee
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          commission_total, gateway_fee, delivery_pin
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           user_id, shop_id, delivery_address, finalTotal, initialStatus,
           payment_method || 'mobile_banking', paymentStatus, taxAmount,
-          commissionTotal, gatewayFee
+          commissionTotal, gatewayFee, deliveryPin
         ]
       );
 
@@ -247,10 +253,26 @@ export class OrderService {
       // Handle Status Specific Logic
       const order = orders[0];
 
-      // 1. Admin Approval (Just Status Update)
-      if (status === "ADMIN_APPROVED" || status === "approved") {
+      const normalizedStatus = status.toLowerCase();
+      // 1. Admin Approval (Record Transaction Here)
+      if (normalizedStatus === "approved" || normalizedStatus === "admin_approved") {
         if (order.payment_status !== "paid") {
           throw new Error("Cannot approve an unpaid order");
+        }
+
+        // Only record if it wasn't already approved
+        if (order.status !== "approved" && order.status !== "ADMIN_APPROVED") {
+          const wallet = await WalletService.getWalletByShopId(order.shop_id);
+          if (wallet) {
+            await WalletService.addTransaction(connection, {
+              wallet_id: wallet.wallet_id,
+              amount: order.total,
+              type: 'credit',
+              source: 'order_earning',
+              reference_id: orderId,
+              description: `Order Approval: #${orderId} (${order.payment_method})`
+            });
+          }
         }
       }
 
@@ -295,7 +317,7 @@ export class OrderService {
       }
 
       // Update the order status
-      const finalStatus = status === "approved" ? "ADMIN_APPROVED" : status;
+      const finalStatus = status.toLowerCase();
       const [result] = await connection.query(
         "UPDATE Orders SET `status` = ? WHERE order_id = ?",
         [finalStatus, orderId]
@@ -518,7 +540,7 @@ export class OrderService {
       for (const bank of banks) {
         const table = `${bank}_bank_payments`;
         const [bankPayment] = await pool.query(
-          `SELECT status as bank_payment_status, rejection_reason, transaction_id, '${bank}' as bank_type 
+          `SELECT id, status as bank_payment_status, rejection_reason, transaction_id, receipt_url, '${bank}' as bank_type 
            FROM ${table} WHERE order_id = ? ORDER BY created_at DESC LIMIT 1`,
           [order.order_id]
         );

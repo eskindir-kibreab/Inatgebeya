@@ -26,8 +26,8 @@ const PaymentSuccess = () => {
                     // Redirect to order details after a short delay
                     if (response.orderId) {
                         setTimeout(() => {
-                            navigate(`/orders/${response.orderId}`);
-                        }, 2000);
+                            navigate(`/orders/${response.orderId}`, { replace: true });
+                        }, 3000);
                     }
                 } else {
                     setStatus("failed");
@@ -84,7 +84,7 @@ const PaymentSuccess = () => {
             <div className="space-y-3">
                 <h1 className="text-4xl font-bold text-text-main dark:text-gray-200">Payment Successful!</h1>
                 <p className="text-lg text-text-secondary dark:text-gray-400 max-w-md mx-auto">
-                    Your order has been received and is waiting for administrator approval. You will be notified once the order is approved.
+                    Your payment was verified. We are redirecting you to your order details...
                 </p>
             </div>
 

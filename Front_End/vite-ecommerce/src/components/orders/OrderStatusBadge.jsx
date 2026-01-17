@@ -31,13 +31,7 @@ const OrderStatusBadge = ({ status, className = "" }) => {
       textColor: "text-purple-800 dark:text-purple-300",
       iconColor: "text-purple-600 dark:text-purple-400",
     },
-    shipped: {
-      icon: Truck,
-      text: "Shipped",
-      bgColor: "bg-orange-100 dark:bg-orange-900/20",
-      textColor: "text-orange-800 dark:text-orange-300",
-      iconColor: "text-orange-600 dark:text-orange-400",
-    },
+
     delivered: {
       icon: Home,
       text: "Delivered",
@@ -53,6 +47,13 @@ const OrderStatusBadge = ({ status, className = "" }) => {
       iconColor: "text-green-600 dark:text-green-400",
     },
     admin_approved: {
+      icon: CheckCircle,
+      text: "Approved",
+      bgColor: "bg-blue-100 dark:bg-blue-900/20",
+      textColor: "text-blue-800 dark:text-blue-300",
+      iconColor: "text-blue-600 dark:text-blue-400",
+    },
+    approved: {
       icon: CheckCircle,
       text: "Approved",
       bgColor: "bg-blue-100 dark:bg-blue-900/20",

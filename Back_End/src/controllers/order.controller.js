@@ -2,6 +2,7 @@ import pool from "../config/db.js";
 import { ShopService } from "../services/shop.service.js";
 import { validationResult } from "express-validator";
 import { OrderService } from "../services/order.service.js";
+import { DeliveryService } from "../services/delivery.service.js";
 
 // Get all orders (Admin, Super Admin)
 export const getAllOrders = async (req, res) => {
@@ -72,6 +73,27 @@ export const getOrderById = async (req, res) => {
         success: false,
         message: "You can only view orders from your shop",
       });
+    }
+
+    if (req.user.role_name === "delivery_person") {
+      let deliveryPersonId = req.user.delivery_person_id;
+
+      // If missing from req.user, try to fetch it directly
+      if (!deliveryPersonId) {
+        const dpProfile = await DeliveryService.getDeliveryPersonByUserId(req.user.user_id);
+        if (dpProfile) {
+          deliveryPersonId = dpProfile.delivery_person_id;
+        }
+      }
+
+      // Check if this order is assigned to this delivery person
+      // We use loose inequality (!=) to handle number vs string comparisons safely
+      if (!order.delivery || order.delivery.delivery_person_id != deliveryPersonId) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only view orders assigned to you",
+        });
+      }
     }
 
     res.json({

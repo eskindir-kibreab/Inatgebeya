@@ -123,33 +123,6 @@ const Shop = () => {
             )}
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {shop.product_count || 0}
-                </div>
-                <div className="text-sm text-text-secondary dark:text-gray-400">
-                  Products
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-accent">
-                  {shop.total_sales || 0}
-                </div>
-                <div className="text-sm text-text-secondary dark:text-gray-400">
-                  Sales
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => (window.location.href = "/coming-soon")}
-              className="mt-4 w-full btn-primary"
-            >
-              Contact Seller
-            </button>
-          </div>
         </div>
       </div>
 

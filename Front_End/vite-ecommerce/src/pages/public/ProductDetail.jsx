@@ -41,6 +41,7 @@ const ProductDetail = () => {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [activeTab, setActiveTab] = useState("description"); // "description" or "reviews"
 
+
   // Chat state
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -657,6 +658,7 @@ const ProductDetail = () => {
             </div>
           </div>
         )}
+
 
       {/* Chat Modal */}
       <ChatModal

@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Sun, Moon, User, LayoutDashboard, Users, Package, FolderTree, Truck, ShoppingCart, LogOut, ChevronDown, UserCheck, ListTodo, ShoppingBag, MapPin, MessageCircle, Mail } from "lucide-react";
+import { Search, Sun, Moon, User, LayoutDashboard, Users, Package, FolderTree, Truck, ShoppingCart, LogOut, ChevronDown, UserCheck, ListTodo, ShoppingBag, MapPin, MessageCircle, Mail, DollarSign } from "lucide-react";
 import FilterDropdown from "../search/FilterDropdown";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { ROLES } from "../../utils/constants";
+import { chatAPI } from "../../api/chat.api";
+import { useSocket } from "../../context/SocketContext";
+import toast from "react-hot-toast";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -21,6 +24,8 @@ const Header = () => {
   });
   const searchRef = useRef(null);
   const deliveriesRef = useRef(null);
+  const socket = useSocket();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Sync state with URL parameters
   useEffect(() => {
@@ -37,6 +42,51 @@ const Header = () => {
       max_price,
     });
   }, [location.search]);
+
+  // Fetch unread count
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+    } else {
+      setUnreadCount(0);
+    }
+  }, [isAuthenticated, location.pathname]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await chatAPI.getUnreadCount();
+      if (response.success) {
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  };
+
+  // Socket listener for real-time notifications
+  useEffect(() => {
+    if (socket && isAuthenticated) {
+      const handleNewMessage = (msg) => {
+        // If we are not on the messages page or modal is not handles elsewhere, 
+        // increment count and show toast
+        setUnreadCount(prev => prev + 1);
+
+        // Show notification toast if not already on a message-related page
+        if (!location.pathname.includes('messages')) {
+          toast("New message received", {
+            icon: '💬',
+            duration: 4000
+          });
+        }
+      };
+
+      socket.on("receive_message", handleNewMessage);
+
+      return () => {
+        socket.off("receive_message", handleNewMessage);
+      };
+    }
+  }, [socket, isAuthenticated, location.pathname]);
 
   // Debounced search for real-time results
   useEffect(() => {
@@ -142,9 +192,6 @@ const Header = () => {
                       <Link to="/admin/dashboard" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/dashboard" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
                         <LayoutDashboard className="w-4 h-4 inline mr-1" /> Dashboard
                       </Link>
-                      <Link to="/admin/messages" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/messages" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
-                        <MessageCircle className="w-4 h-4 inline mr-1" /> Support Chat
-                      </Link>
                       <Link to="/admin/users" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/users" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
                         <Users className="w-4 h-4 inline mr-1" /> Users
                       </Link>
@@ -166,9 +213,6 @@ const Header = () => {
                       </Link>
                       <Link to="/admin/orders" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/orders" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
                         <ListTodo className="w-4 h-4 inline mr-1" /> Orders
-                      </Link>
-                      <Link to="/admin/bank-transfers" className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === "/admin/bank-transfers" ? "bg-primary text-white" : "text-text-secondary hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
-                        <UserCheck className="w-4 h-4 inline mr-1" /> Bank Verification
                       </Link>
                     </>
                   )}
@@ -240,8 +284,11 @@ const Header = () => {
                     onMouseLeave={() => window.innerWidth >= 1024 && setIsProfileOpen(false)}
                     className="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-bg-light transition-all border border-border-default dark:border-gray-700"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center relative">
                       <User className="w-5 h-5 text-primary" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                      )}
                     </div>
                     <span className="hidden xl:inline text-sm font-bold text-text-main dark:text-white">{user?.full_name?.split(" ")[0]}</span>
                     <ChevronDown className="w-4 h-4 text-text-secondary" />
@@ -250,11 +297,45 @@ const Header = () => {
                     onMouseEnter={() => setIsProfileOpen(true)}
                     onMouseLeave={() => setIsProfileOpen(false)}>
                     <Link to="/profile" className="block px-4 py-3 font-bold text-sm hover:bg-bg-light dark:hover:bg-gray-700">My Profile</Link>
-                    {!role || role === 'user' ? (
-                      <Link to="/messages" className="block px-4 py-3 font-bold text-sm hover:bg-bg-light dark:hover:bg-gray-700 flex items-center gap-2">
-                        <Mail className="w-4 h-4" /> My Messages
+                    {role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN ? (
+                      <Link to="/admin/messages" className="block px-4 py-3 font-bold text-sm hover:bg-bg-light dark:hover:bg-gray-700 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MessageCircle className="w-4 h-4" /> Support Chat
+                        </div>
+                        {unreadCount > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </Link>
+                    ) : (!role || role === 'user') ? (
+                      <Link to="/messages" className="block px-4 py-3 font-bold text-sm hover:bg-bg-light dark:hover:bg-gray-700 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4" /> My Messages
+                        </div>
+                        {unreadCount > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </Link>
+                    ) : role === 'shop_owner' ? (
+                      <Link to="/shop-owner/messages" className="block px-4 py-3 font-bold text-sm hover:bg-bg-light dark:hover:bg-gray-700 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MessageCircle className="w-4 h-4" /> Shop Messages
+                        </div>
+                        {unreadCount > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                            {unreadCount}
+                          </span>
+                        )}
                       </Link>
                     ) : null}
+                    {![ROLES.DELIVERY_PERSON, ROLES.SHOP_OWNER].includes(role) && (
+                      <Link to="/transactions" className="block px-4 py-3 font-bold text-sm hover:bg-bg-light dark:hover:bg-gray-700 flex items-center gap-2">
+                        <DollarSign className="w-4 h-4" /> Financial History
+                      </Link>
+                    )}
                     {!isRoleBasedPage && <Link to="/orders" className="block px-4 py-3 font-bold text-sm hover:bg-bg-light dark:hover:bg-gray-700">My Orders</Link>}
                     <hr className="my-2 border-border-default dark:border-gray-700" />
                     <button onClick={logout} className="w-full text-left px-4 py-3 font-bold text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">Logout</button>

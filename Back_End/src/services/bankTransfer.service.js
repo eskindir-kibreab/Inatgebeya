@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { WalletService } from "./wallet.service.js";
 
 export class BankTransferService {
     static async asyncCheckTransactionExists(transactionId) {
@@ -62,6 +63,29 @@ export class BankTransferService {
     }
 
     /**
+     * Get all historical bank transfers (Approved/Rejected/Cancelled) for admin
+     */
+    static async getHistoricalPayments() {
+        const banks = ['awash', 'cbe', 'birhan'];
+        let allHistory = [];
+
+        for (const bank of banks) {
+            const table = this._getTableName(bank);
+            const [payments] = await pool.query(
+                `SELECT p.*, u.full_name as customer_name, o.total as order_total, '${bank}' as bank_type
+                 FROM ${table} p
+                 JOIN Users u ON p.user_id = u.user_id
+                 JOIN Orders o ON p.order_id = o.order_id
+                 WHERE p.status != 'PENDING'
+                 ORDER BY p.updated_at DESC`
+            );
+            allHistory = [...allHistory, ...payments];
+        }
+
+        return allHistory.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
+    }
+
+    /**
      * Admin Verify (Approve/Reject) a bank transfer
      */
     static async verifyPayment(bank, paymentId, action, adminId, rejectionReason = null) {
@@ -111,6 +135,8 @@ export class BankTransferService {
                      VALUES (?, ?, ?, 'completed', ?, ?, CURRENT_TIMESTAMP)`,
                     [payment.order_id, payment.user_id, payment.amount, tx_ref, payment.transaction_id]
                 );
+
+                // NOTE: Wallet Transaction recording moved to OrderService.updateOrderStatus
             } else if (status === 'REJECTED') {
                 // Update Order status to 'rejected'
                 await connection.query(

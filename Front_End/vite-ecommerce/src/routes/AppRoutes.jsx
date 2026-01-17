@@ -31,6 +31,7 @@ const Orders = lazy(() => import("../pages/user/Orders.jsx"));
 const UserMessages = lazy(() => import("../pages/user/UserMessages.jsx"));
 const NewOrder = lazy(() => import("../pages/user/NewOrder.jsx"));
 const PaymentSuccess = lazy(() => import("../pages/user/PaymentSuccess.jsx"));
+const Transactions = lazy(() => import("../pages/common/Transactions.jsx"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("../pages/admin/Dashboard.jsx"));
@@ -78,6 +79,9 @@ const DeliveryAdminAssign = lazy(() =>
 // Delivery Person pages
 const DeliveryPersonDashboard = lazy(() =>
   import("../pages/delivery-person/Dashboard.jsx")
+);
+const DeliveryPersonHistory = lazy(() =>
+  import("../pages/delivery-person/History.jsx")
 );
 
 const AppRoutes = () => {
@@ -205,6 +209,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <PaymentSuccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/transactions"
+          element={
+            <ProtectedRoute>
+              <Transactions />
             </ProtectedRoute>
           }
         />
@@ -382,6 +394,22 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute roles={["delivery_person"]}>
               <DeliveryPersonDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/delivery-person/history"
+          element={
+            <ProtectedRoute roles={["delivery_person"]}>
+              <DeliveryPersonHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/delivery-person/orders/:orderId"
+          element={
+            <ProtectedRoute roles={["delivery_person"]}>
+              <OrderDetail />
             </ProtectedRoute>
           }
         />

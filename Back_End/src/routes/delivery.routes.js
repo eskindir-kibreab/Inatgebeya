@@ -164,7 +164,7 @@ router.get(
     query("start_date").optional().isDate(),
     query("end_date").optional().isDate(),
   ],
-  requirePermission("super_admin", "admin", "delivery_admin"),
+  requireRole("super_admin", "admin", "delivery_admin", "delivery_person"),
   getDeliveryStats
 );
 

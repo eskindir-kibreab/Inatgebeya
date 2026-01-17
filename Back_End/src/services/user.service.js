@@ -8,11 +8,13 @@ export class UserService {
 
     let query = `
       SELECT u.*, r.role_name, uc.balance as coins_balance,
-             ui.fan_number, ui.id_image_url
+             ui.fan_number, ui.id_image_url,
+             dp.delivery_person_id
       FROM Users u
       JOIN Roles r ON u.role_id = r.role_id
       LEFT JOIN UserCoins uc ON u.user_id = uc.user_id
       LEFT JOIN UserIdentifications ui ON u.user_id = ui.user_id
+      LEFT JOIN DeliveryPersons dp ON u.user_id = dp.user_id
       WHERE 1=1
     `;
     const params = [];
@@ -69,12 +71,13 @@ export class UserService {
     const [users] = await pool.query(
       `SELECT u.*, r.role_name, uc.balance as coins_balance,
               ui.fan_number, ui.id_image_url,
-              s.shop_id
+              s.shop_id, dp.delivery_person_id
        FROM Users u
        JOIN Roles r ON u.role_id = r.role_id
        LEFT JOIN UserCoins uc ON u.user_id = uc.user_id
        LEFT JOIN UserIdentifications ui ON u.user_id = ui.user_id
        LEFT JOIN Shops s ON u.user_id = s.owner_id
+       LEFT JOIN DeliveryPersons dp ON u.user_id = dp.user_id
        WHERE u.user_id = ?`,
       [userId]
     );

@@ -134,9 +134,17 @@ pool
           ALTER TABLE Orders 
           ADD COLUMN tax_amount DECIMAL(15,2) DEFAULT 0.00,
           ADD COLUMN commission_total DECIMAL(15,2) DEFAULT 0.00,
-          ADD COLUMN gateway_fee DECIMAL(15,2) DEFAULT 0.00
+          ADD COLUMN gateway_fee DECIMAL(15,2) DEFAULT 0.00,
+          ADD COLUMN delivery_pin VARCHAR(6) NULL
         `);
-        console.log("✅ Added financial columns to Orders table");
+        console.log("✅ Added financial and PIN columns to Orders table");
+      }
+
+      // 5.1 Ensure delivery_pin column exists independently (for robustness)
+      const [pinCols] = await connection.query("SHOW COLUMNS FROM Orders LIKE 'delivery_pin'");
+      if (pinCols.length === 0) {
+        await connection.query("ALTER TABLE Orders ADD COLUMN delivery_pin VARCHAR(6) NULL");
+        console.log("✅ Added delivery_pin column to Orders table");
       }
 
       console.log("✅ Marketplace financial tables verified");
@@ -159,6 +167,22 @@ pool
         )
       `);
       console.log("✅ Messages table verified");
+
+      // 7. Wallet Transactions Table
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS WalletTransactions (
+          transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+          wallet_id INT NOT NULL,
+          amount DECIMAL(15,2) NOT NULL,
+          type ENUM('credit', 'debit') NOT NULL,
+          source ENUM('order_earning', 'withdrawal', 'refund', 'commission', 'tax', 'adjustment') NOT NULL,
+          reference_id INT NULL,
+          description TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (wallet_id) REFERENCES SellerWallets(wallet_id) ON DELETE CASCADE
+        )
+      `);
+      console.log("✅ WalletTransactions table verified");
     } catch (schemaError) {
       console.error("❌ Schema synchronization failed:", schemaError.message);
     }

@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { WalletService } from "./wallet.service.js";
 
 export class PaymentService {
     /**
@@ -12,16 +13,20 @@ export class PaymentService {
             throw new Error("CHAPA_SECRET_KEY is not configured");
         }
 
+        if (orderData.payment_status === 'paid') {
+            throw new Error("Order has already been paid.");
+        }
+
         const tx_ref = `TX-${orderData.order_id}-${Date.now()}`;
 
         const payload = {
             amount: orderData.total,
             currency: "ETB",
             email: customerData.email,
-            first_name: customerData.full_name.split(" ")[0],
-            last_name: customerData.full_name.split(" ").slice(1).join(" ") || "Customer",
+            first_name: customerData.full_name?.split(" ")[0] || "Customer",
+            last_name: customerData.full_name?.split(" ").slice(1).join(" ") || "User",
             tx_ref: tx_ref,
-            callback_url: `${process.env.BACKEND_URL}/api/payments/verify/webhook`, // Optional
+            callback_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/verify/webhook`,
             return_url: `${process.env.FRONTEND_URL}/checkout/success?tx_ref=${tx_ref}`,
             "customization[title]": "Order Payment",
             "customization[description]": `Payment for Order #${orderData.order_id}`
@@ -100,10 +105,13 @@ export class PaymentService {
                 );
 
                 if (payment.length > 0) {
+                    const orderId = payment[0].order_id;
                     await connection.query(
                         "UPDATE Orders SET payment_status = 'paid' WHERE order_id = ?",
-                        [payment[0].order_id]
+                        [orderId]
                     );
+
+                    // NOTE: Wallet Transaction recording moved to OrderService.updateOrderStatus
                 }
 
                 await connection.commit();

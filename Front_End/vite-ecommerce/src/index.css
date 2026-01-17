@@ -382,4 +382,25 @@
   a {
     @apply text-black no-underline;
   }
+
+  /* Transaction Report Print Styles */
+  .print-transaction-report {
+    @apply bg-white p-0 m-0 !important;
+  }
+
+  .print\:page-break-inside-avoid {
+    page-break-inside: avoid;
+  }
+
+  table {
+    @apply w-full border-collapse !important;
+  }
+
+  th, td {
+    @apply border-b border-gray-200 p-4 !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Send, Loader2, MessageCircle, Store, Check, CheckCheck } from "lucide-react";
+import { X, Send, Loader2, MessageCircle, Store, Check, CheckCheck, Users } from "lucide-react";
 import { chatAPI } from "../../api/chat.api";
 import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
@@ -12,6 +12,7 @@ const ChatModal = ({
     shopName,
     orderId = null,
     productId = null,
+    isSupport = false,
 }) => {
     const { user } = useAuth();
     const socket = useSocket();
@@ -130,14 +131,14 @@ const ChatModal = ({
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary/10 to-primary/5">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                            <Store className="w-5 h-5 text-primary" />
+                            {isSupport ? <Users className="w-5 h-5 text-primary" /> : <Store className="w-5 h-5 text-primary" />}
                         </div>
                         <div>
                             <h3 className="font-bold text-gray-900 dark:text-white">
-                                {shopName || "Shop"}
+                                {shopName || (isSupport ? "Support" : "Shop")}
                             </h3>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Contact Shop Owner
+                                {isSupport ? "Contact Support Team" : "Contact Shop Owner"}
                             </p>
                         </div>
                     </div>
@@ -164,7 +165,9 @@ const ChatModal = ({
                                 Start a Conversation
                             </h4>
                             <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
-                                Send a message to the shop owner. They will respond as soon as possible.
+                                {isSupport
+                                    ? "Send a message to our support team. We will respond as soon as possible."
+                                    : "Send a message to the shop owner. They will respond as soon as possible."}
                             </p>
                         </div>
                     ) : (

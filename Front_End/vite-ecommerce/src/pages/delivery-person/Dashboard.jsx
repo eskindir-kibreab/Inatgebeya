@@ -8,6 +8,7 @@ import {
   XCircle,
   User,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { deliveryAPI } from "../../api/delivery.api";
 import Button from "../../components/forms/Button";
 import toast from "react-hot-toast";
@@ -25,6 +26,7 @@ const DeliveryPersonDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState({});
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDeliveries();
@@ -50,24 +52,22 @@ const DeliveryPersonDashboard = () => {
       const assignedRes = await deliveryAPI.getAssigned();
       if (assignedRes.success) {
         setAssignedDeliveries(assignedRes.data);
+      }
 
-        // Calculate today's stats from assigned deliveries
-        const today = new Date().toDateString();
-        const todayDeliveries = assignedRes.data.filter(
-          (d) => new Date(d.created_at).toDateString() === today
-        );
+      // Fetch today's stats from backend
+      const today = new Date().toISOString().split('T')[0];
+      const statsRes = await deliveryAPI.getStats({
+        delivery_person_id: profileRes.data.delivery_person_id,
+        start_date: today,
+        end_date: today
+      });
 
+      if (statsRes.success) {
         setStats({
-          totalToday: todayDeliveries.length,
-          completedToday: todayDeliveries.filter(
-            (d) => d.status === "delivered"
-          ).length,
-          pendingToday: todayDeliveries.filter((d) => d.status !== "delivered")
-            .length,
-          totalEarnings: todayDeliveries.reduce(
-            (sum, d) => sum + (d.delivery_fee || 50),
-            0
-          ),
+          totalToday: statsRes.data.total_deliveries,
+          completedToday: statsRes.data.completed,
+          pendingToday: statsRes.data.assigned + statsRes.data.picked,
+          totalEarnings: statsRes.data.total_earnings,
         });
       }
 
@@ -83,19 +83,25 @@ const DeliveryPersonDashboard = () => {
     }
   };
 
-  const handleUpdateStatus = async (deliveryId, newStatus) => {
+  const handleUpdateStatus = async (deliveryId, newStatus, orderId) => {
+    if (newStatus === "delivered") {
+      // Navigate to detail page instead of prompting here
+      navigate(`/delivery-person/orders/${orderId}`);
+      return;
+    }
+
     setUpdatingStatus((prev) => ({ ...prev, [deliveryId]: true }));
 
     try {
       const response = await deliveryAPI.updateStatus(deliveryId, {
-        status: newStatus,
+        status: newStatus
       });
       if (response.success) {
         toast.success(`Delivery marked as ${newStatus}`);
         fetchDeliveries();
       }
     } catch (error) {
-      toast.error("Failed to update status");
+      toast.error(error.response?.data?.message || "Failed to update status");
     } finally {
       setUpdatingStatus((prev) => ({ ...prev, [deliveryId]: false }));
     }
@@ -148,8 +154,6 @@ const DeliveryPersonDashboard = () => {
       case "assigned":
         return { label: "Mark as Picked", action: "picked" };
       case "picked":
-        return { label: "Mark as Shipped", action: "shipped" };
-      case "shipped":
         return { label: "Mark as Delivered", action: "delivered" };
       default:
         return null;
@@ -157,7 +161,12 @@ const DeliveryPersonDashboard = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-ET", {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A";
+    return date.toLocaleDateString("en-ET", {
+      month: "short",
+      day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -182,12 +191,7 @@ const DeliveryPersonDashboard = () => {
       icon: Clock,
       color: "bg-yellow-500",
     },
-    {
-      title: "Today's Earnings",
-      value: `ETB ${stats.totalEarnings}`,
-      icon: Package,
-      color: "bg-purple-500",
-    },
+
   ];
 
   if (loading) {
@@ -329,7 +333,11 @@ const DeliveryPersonDashboard = () => {
                 const nextAction = getNextAction(delivery.status);
 
                 return (
-                  <div key={delivery.delivery_id} className="p-6">
+                  <div
+                    key={delivery.delivery_id}
+                    className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/delivery-person/orders/${delivery.order_id}`)}
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="font-medium text-text-main dark:text-gray-200">
@@ -363,11 +371,11 @@ const DeliveryPersonDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       {nextAction && (
                         <Button
                           onClick={() =>
-                            handleUpdateStatus(delivery.delivery_id, nextAction.action)
+                            handleUpdateStatus(delivery.delivery_id, nextAction.action, delivery.order_id)
                           }
                           loading={updatingStatus[delivery.delivery_id]}
                           className="flex-1"
@@ -379,7 +387,7 @@ const DeliveryPersonDashboard = () => {
                       {delivery.status === "picked" && (
                         <Button
                           onClick={() =>
-                            handleUpdateStatus(delivery.delivery_id, "returned")
+                            handleUpdateStatus(delivery.delivery_id, "returned", delivery.order_id)
                           }
                           variant="danger"
                           loading={updatingStatus[delivery.delivery_id]}
@@ -387,33 +395,32 @@ const DeliveryPersonDashboard = () => {
                           <XCircle className="w-4 h-4" />
                         </Button>
                       )}
+
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate(`/delivery-person/orders/${delivery.order_id}`)}
+                        className="flex-1"
+                      >
+                        View Details
+                      </Button>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="p-6 text-center">
-                <div className="text-4xl mb-4">🚚</div>
-                <h3 className="text-lg font-semibold text-text-main dark:text-gray-200 mb-2">
-                  No assigned deliveries
-                </h3>
-                <p className="text-text-secondary dark:text-gray-400">
-                  Check back later for new delivery assignments
-                </p>
+              <div className="p-12 text-center text-text-secondary dark:text-gray-400">
+                You have no assigned deliveries at the moment.
               </div>
             )}
           </div>
         </div>
 
-        {/* Recent Completed Deliveries */}
-        <div
-          className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
-                       dark:border-gray-700"
-        >
+        {/* Recent Deliveries */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-border-default dark:border-gray-700">
           <div className="p-6 border-b border-border-default dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-text-main dark:text-gray-200">
-                Recent Completed
+                Recent Deliveries
               </h2>
               <CheckCircle className="w-5 h-5 text-green-500" />
             </div>
@@ -423,41 +430,47 @@ const DeliveryPersonDashboard = () => {
             {completedDeliveries.length > 0 ? (
               completedDeliveries.map((delivery) => (
                 <div key={delivery.delivery_id} className="p-6">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="font-medium text-text-main dark:text-gray-200">
                         Order #{delivery.order_id}
                       </h3>
-                      <p className="text-sm text-text-secondary dark:text-gray-400">
-                        {formatDate(delivery.updated_at)}
+                      <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">
+                        {formatDate(delivery.delivered_at || delivery.updated_at || delivery.created_at)}
                       </p>
                     </div>
                     <span
-                      className="px-3 py-1 bg-green-100 text-green-800 
-                                   dark:bg-green-900/20 dark:text-green-400 
-                                   rounded-full text-sm"
+                      className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getStatusColor(
+                        delivery.status
+                      )}`}
                     >
-                      Delivered
+                      {delivery.status === 'delivered' ? 'Completed' : delivery.status}
                     </span>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <User className="w-4 h-4 text-text-secondary" />
                       <span className="text-text-secondary dark:text-gray-400">
-                        Address
+                        {delivery.customer_name}
                       </span>
-                      <span className="font-medium">
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-4 h-4 text-text-secondary" />
+                      <span className="text-text-secondary dark:text-gray-400">
                         {delivery.delivery_address}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-text-secondary dark:text-gray-400">
-                        Fee
-                      </span>
-                      <span className="font-medium text-price">
-                        ETB {delivery.delivery_fee || 50}
-                      </span>
-                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border-default dark:border-gray-700/50">
+                    <span className="text-sm text-text-secondary dark:text-gray-400">
+                      Delivery Fee
+                    </span>
+                    <span className="font-bold text-price">
+                      ETB {delivery.delivery_fee || 50}
+                    </span>
                   </div>
                 </div>
               ))
@@ -472,9 +485,7 @@ const DeliveryPersonDashboard = () => {
 
           <div className="p-6 border-t border-border-default dark:border-gray-700">
             <button
-              onClick={() =>
-                (window.location.href = "/coming-soon")
-              }
+              onClick={() => navigate("/delivery-person/history")}
               className="text-primary hover:text-primary-hover font-medium"
             >
               View Full History →
@@ -483,68 +494,6 @@ const DeliveryPersonDashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div
-        className="mt-8 bg-white dark:bg-gray-800 rounded-xl border border-borderdefault 
-                     dark:border-gray-700 p-6"
-      >
-        <h2 className="text-xl font-semibold text-text-main dark:text-gray-200 mb-6">
-          Quick Actions
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={fetchDeliveries}
-            className="p-4 border border-border-default dark:border-gray-700 
-                     rounded-lg hover:border-primary hover:bg-primary/5 
-                     transition-colors text-left flex items-center gap-3"
-          >
-            <Package className="w-5 h-5 text-primary" />
-            <div>
-              <p className="font-medium text-text-main dark:text-gray-200">
-                Refresh Deliveries
-              </p>
-              <p className="text-sm text-text-secondary dark:text-gray-400">
-                Check for new assignments
-              </p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => (window.location.href = "/coming-soon")}
-            className="p-4 border border-border-default dark:border-gray-700 
-                     rounded-lg hover:border-primary hover:bg-primary/5 
-                     transition-colors text-left flex items-center gap-3"
-          >
-            <MapPin className="w-5 h-5 text-primary" />
-            <div>
-              <p className="font-medium text-text-main dark:text-gray-200">
-                View Delivery Map
-              </p>
-              <p className="text-sm text-text-secondary dark:text-gray-400">
-                See all delivery locations
-              </p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => (window.location.href = "/coming-soon")}
-            className="p-4 border border-border-default dark:border-gray-700 
-                     rounded-lg hover:border-primary hover:bg-primary/5 
-                     transition-colors text-left flex items-center gap-3"
-          >
-            <Truck className="w-5 h-5 text-primary" />
-            <div>
-              <p className="font-medium text-text-main dark:text-gray-200">
-                View Earnings
-              </p>
-              <p className="text-sm text-text-secondary dark:text-gray-400">
-                Track your delivery earnings
-              </p>
-            </div>
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

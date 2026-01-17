@@ -125,7 +125,7 @@ router.get(
 router.get(
   "/:id",
   [param("id").isInt()],
-  requireRole("user", "shop_owner", "super_admin", "admin"),
+  requireRole("user", "shop_owner", "super_admin", "admin", "delivery_person"),
   getOrderById
 );
 

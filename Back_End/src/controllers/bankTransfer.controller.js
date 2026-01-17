@@ -71,3 +71,16 @@ export const verifyBankTransfer = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// @desc Admin: List all historical bank transfers
+// @route GET /api/bank-transfer/history
+// @access Private/Admin
+export const listHistoricalTransfers = async (req, res) => {
+    try {
+        const payments = await BankTransferService.getHistoricalPayments();
+        res.status(200).json({ success: true, data: payments });
+    } catch (error) {
+        console.error("List Historical Transfers Error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

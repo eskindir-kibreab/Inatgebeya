@@ -167,6 +167,14 @@ const AdminDashboard = () => {
       color: "bg-indigo-500",
       change: "+15%",
     },
+    {
+      title: "Platform Wallet",
+      value: "Details",
+      icon: DollarSign,
+      color: "bg-primary",
+      onClick: () => (window.location.href = "/transactions"),
+      change: "Full History",
+    },
   ];
 
   if (loading) {
@@ -294,7 +302,7 @@ const AdminDashboard = () => {
 
           <div className="p-6 border-t border-border-default dark:border-gray-700">
             <button
-              onClick={() => (window.location.href = "/coming-soon")}
+              onClick={() => (window.location.href = "/admin/orders")}
               className="text-primary hover:text-primary-hover font-medium"
             >
               View All Orders →
@@ -371,7 +379,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-    </div>
+    </div >
   );
 };
 

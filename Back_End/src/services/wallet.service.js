@@ -51,4 +51,16 @@ export class WalletService {
             escrow_funds: escrow[0].amount || 0
         };
     }
+    /**
+     * Record a transaction in the wallet ledger
+     */
+    static async addTransaction(connection, data) {
+        const { wallet_id, amount, type, source, reference_id, description } = data;
+
+        await connection.query(
+            `INSERT INTO WalletTransactions (wallet_id, amount, type, source, reference_id, description)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [wallet_id, amount, type, source, reference_id, description]
+        );
+    }
 }

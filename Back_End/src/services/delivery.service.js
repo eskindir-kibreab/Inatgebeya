@@ -176,8 +176,9 @@ export class DeliveryService {
       JOIN Shops s ON o.shop_id = s.shop_id
       JOIN Areas a ON s.area_id = a.area_id
       LEFT JOIN DeliveryOrders do ON o.order_id = do.order_id
-      WHERE o.status IN ('approved', 'delivering')
+      WHERE LOWER(o.status) IN ('approved', 'admin_approved', 'delivering')
       AND (do.delivery_id IS NULL OR do.status IN ('assigned', 'picked'))
+      AND (o.payment_status = 'paid' OR o.payment_method = 'cash_on_delivery')
     `;
     const params = [];
 
@@ -192,8 +193,9 @@ export class DeliveryService {
       FROM Orders o
       JOIN Shops s ON o.shop_id = s.shop_id
       LEFT JOIN DeliveryOrders do ON o.order_id = do.order_id
-      WHERE o.status IN ('approved', 'delivering')
+      WHERE LOWER(o.status) IN ('approved', 'admin_approved', 'delivering')
       AND (do.delivery_id IS NULL OR do.status IN ('assigned', 'picked'))
+      AND (o.payment_status = 'paid' OR o.payment_method = 'cash_on_delivery')
       ${areaId ? " AND s.area_id = ?" : ""}
     `;
 
@@ -264,7 +266,7 @@ export class DeliveryService {
   static async assignDelivery(orderId, deliveryPersonId) {
     // Check if order is ready for delivery
     const [orders] = await pool.query(
-      "SELECT status FROM Orders WHERE order_id = ?",
+      "SELECT status, payment_status, payment_method FROM Orders WHERE order_id = ?",
       [orderId]
     );
 
@@ -272,9 +274,16 @@ export class DeliveryService {
       throw new Error("Order not found");
     }
 
+    const order = orders[0];
+
     // Allow assignment from Approved or already Delivering states
-    if (!["approved", "ADMIN_APPROVED", "delivering", "delivery_assigned"].includes(orders[0].status)) {
+    if (!["approved", "ADMIN_APPROVED", "delivering", "delivery_assigned"].includes(order.status)) {
       throw new Error("Order is not ready for delivery");
+    }
+
+    // MANDATORY: Payment Check (Must be Paid or COD)
+    if (order.payment_status !== 'paid' && order.payment_method !== 'cash_on_delivery') {
+      throw new Error("Cannot assign unpaid order (Must be PAID or COD)");
     }
 
     // Check if already assigned
@@ -302,39 +311,48 @@ export class DeliveryService {
   static async updateDeliveryStatus(
     deliveryId,
     status,
-    deliveryPersonId = null
+    deliveryPersonId = null,
+    pin = null
   ) {
-    let query = "UPDATE DeliveryOrders SET status = ? WHERE delivery_id = ?";
-    const params = [status, deliveryId];
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
 
-    if (deliveryPersonId) {
-      query += " AND delivery_person_id = ?";
-      params.push(deliveryPersonId);
-    }
+    try {
+      // 1. Get delivery and order info first
+      const [deliveries] = await connection.query(
+        "SELECT * FROM DeliveryOrders WHERE delivery_id = ?",
+        [deliveryId]
+      );
 
-    const [result] = await pool.query(query, params);
+      if (deliveries.length === 0) {
+        await connection.rollback();
+        connection.release();
+        return 0;
+      }
 
-    if (result.affectedRows === 0) {
-      return 0;
-    }
+      const delivery = deliveries[0];
+      const orderId = delivery.order_id;
 
-    // Get order ID
-    const [delivery] = await pool.query(
-      "SELECT order_id FROM DeliveryOrders WHERE delivery_id = ?",
-      [deliveryId]
-    );
+      // Authorization check if deliveryPersonId is provided
+      if (deliveryPersonId && delivery.delivery_person_id != deliveryPersonId) {
+        await connection.rollback();
+        connection.release();
+        return 0;
+      }
 
-    if (delivery.length > 0) {
-      const orderId = delivery[0].order_id; // Fix: use delivery[0] not delivery
+      // 2. Get current order status to enforce flow
+      const [orders] = await connection.query("SELECT status, delivery_pin FROM Orders WHERE order_id = ?", [orderId]);
+      if (orders.length === 0) {
+        throw new Error("Order not found");
+      }
+      const order = orders[0];
+      const currentStatus = order.status;
 
-      // Get current order status to enforce flow
-      const [currentOrder] = await pool.query("SELECT status FROM Orders WHERE order_id = ?", [orderId]);
-      const currentStatus = currentOrder[0]?.status;
-
-      // Sync Order Status based on Delivery Status
+      // 3. Status Specific Logic & Flow Enforcement
       if (status === "picked") {
-        if (currentStatus !== "shipped") {
-          throw new Error("Cannot pick up order. Shop owner must mark it as 'Shipped' first.");
+        const allowedStatuses = ["shipped", "delivery_assigned", "approved", "admin_approved"];
+        if (!allowedStatuses.includes(currentStatus)) {
+          throw new Error("Cannot pick up order. It must be assigned or approved first.");
         }
         await OrderService.updateOrderStatus(orderId, "picked_up");
 
@@ -344,17 +362,43 @@ export class DeliveryService {
           throw new Error("Cannot mark delivered. Order must be 'Picked Up' first.");
         }
 
-        // This triggers the wallet credit logic in OrderService
-        await OrderService.updateOrderStatus(orderId, "delivered");
+        // PIN Verification (Robust comparison)
+        const correctPin = order.delivery_pin;
 
-        await pool.query(
+        console.log("PIN Verification Debug:", {
+          provided: pin,
+          stored: correctPin,
+          match: pin && correctPin && pin.toString().trim() == correctPin.toString().trim()
+        });
+
+        if (!pin || !correctPin || pin.toString().trim() != correctPin.toString().trim()) {
+          throw new Error("Invalid delivery verification PIN. Please ask the customer for the correct 6-digit code.");
+        }
+
+        await OrderService.updateOrderStatus(orderId, "delivered");
+        await connection.query(
           "UPDATE DeliveryOrders SET delivered_at = NOW() WHERE delivery_id = ?",
           [deliveryId]
         );
+      } else if (status === "returned") {
+        await OrderService.updateOrderStatus(orderId, "returned");
       }
-    }
 
-    return result.affectedRows;
+      // 4. Update DeliveryOrders status
+      const [result] = await connection.query(
+        "UPDATE DeliveryOrders SET status = ? WHERE delivery_id = ?",
+        [status, deliveryId]
+      );
+
+      await connection.commit();
+      connection.release();
+      return result.affectedRows;
+
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
+    }
   }
 
   // Get delivery history for delivery person
@@ -405,37 +449,39 @@ export class DeliveryService {
     let query = `
       SELECT 
         COUNT(*) as total_deliveries,
-        SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as completed,
-        SUM(CASE WHEN status = 'assigned' THEN 1 ELSE 0 END) as assigned,
-        SUM(CASE WHEN status = 'picked' THEN 1 ELSE 0 END) as picked,
-        SUM(CASE WHEN status = 'returned' THEN 1 ELSE 0 END) as returned
-      FROM DeliveryOrders
+        SUM(CASE WHEN do.status = 'delivered' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN do.status = 'assigned' THEN 1 ELSE 0 END) as assigned,
+        SUM(CASE WHEN do.status = 'picked' THEN 1 ELSE 0 END) as picked,
+        SUM(CASE WHEN do.status = 'returned' THEN 1 ELSE 0 END) as returned,
+        COALESCE(SUM(CASE WHEN do.status = 'delivered' THEN o.delivery_fee ELSE 0 END), 0) as total_earnings
+      FROM DeliveryOrders do
+      JOIN Orders o ON do.order_id = o.order_id
       WHERE 1=1
     `;
     const params = [];
 
     if (deliveryPersonId) {
-      query += " AND delivery_person_id = ?";
+      query += " AND do.delivery_person_id = ?";
       params.push(deliveryPersonId);
     }
 
     if (areaId) {
-      query += ` AND order_id IN (
-        SELECT o.order_id 
-        FROM Orders o 
-        JOIN Shops s ON o.shop_id = s.shop_id 
+      query += ` AND do.order_id IN (
+        SELECT o2.order_id 
+        FROM Orders o2 
+        JOIN Shops s ON o2.shop_id = s.shop_id 
         WHERE s.area_id = ?
       )`;
       params.push(areaId);
     }
 
     if (startDate) {
-      query += " AND DATE(created_at) >= ?";
+      query += " AND DATE(do.created_at) >= ?";
       params.push(startDate);
     }
 
     if (endDate) {
-      query += " AND DATE(created_at) <= ?";
+      query += " AND DATE(do.created_at) <= ?";
       params.push(endDate);
     }
 

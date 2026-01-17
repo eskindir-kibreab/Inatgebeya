@@ -47,31 +47,6 @@ const Orders = () => {
         }
     };
 
-    const handleApproveOrder = async (orderId) => {
-        if (!window.confirm("Approve this order and release funds to seller?")) return;
-
-        try {
-            await ordersAPI.updateStatus(orderId, { status: "approved" });
-            toast.success("Order approved successfully");
-            fetchOrders();
-        } catch (error) {
-            console.error("Approval error:", error);
-            toast.error("Failed to approve order");
-        }
-    };
-
-    const handleCancelOrder = async (orderId) => {
-        if (!window.confirm("Are you sure you want to cancel this order?")) return;
-
-        try {
-            await ordersAPI.cancel(orderId);
-            toast.success("Order cancelled successfully");
-            fetchOrders();
-        } catch (error) {
-            console.error("Cancellation error:", error);
-            toast.error("Failed to cancel order");
-        }
-    };
 
     const handleFilterChange = (name, value) => {
         setFilters((prev) => ({
@@ -201,27 +176,6 @@ const Orders = () => {
                                         </td>
                                         <td className="p-6">
                                             <div className="flex items-center gap-1">
-                                                {/* Actions for Pending or Paid Orders */}
-                                                {['pending', 'paid'].includes(getEffectiveOrderStatus(order)) && (
-                                                    <>
-                                                        {order.payment_status === 'paid' && (
-                                                            <button
-                                                                onClick={() => handleApproveOrder(order.order_id)}
-                                                                className="p-2 hover:bg-green-100 text-green-600 dark:hover:bg-green-900/20 rounded-lg"
-                                                                title="Approve Order"
-                                                            >
-                                                                <CheckCircle className="w-4 h-4" />
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleCancelOrder(order.order_id)}
-                                                            className="p-2 hover:bg-red-100 text-red-600 dark:hover:bg-red-900/20 rounded-lg"
-                                                            title="Cancel Order"
-                                                        >
-                                                            <XCircle className="w-4 h-4" />
-                                                        </button>
-                                                    </>
-                                                )}
                                                 <Link
                                                     to={`/admin/orders/${order.order_id}`}
                                                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg inline-flex"

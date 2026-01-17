@@ -20,5 +20,10 @@ export const bankTransferAPI = {
      * Admin: Verify transfer
      * @param {Object} data - { bank, payment_id, action }
      */
-    verify: (data) => axiosInstance.post("/bank-transfer/verify", data)
+    verify: (data) => axiosInstance.post("/bank-transfer/verify", data),
+
+    /**
+     * Admin: Get verification history
+     */
+    getHistory: () => axiosInstance.get("/bank-transfer/history")
 };

@@ -122,6 +122,7 @@ const ShopOwnerDashboard = () => {
       value: `ETB ${stats.walletBalance.toLocaleString()}`,
       icon: Wallet,
       color: "bg-teal-500",
+      onClick: () => (window.location.href = "/transactions"),
       change: "Available to withdraw",
     },
     {
@@ -129,6 +130,7 @@ const ShopOwnerDashboard = () => {
       value: `ETB ${stats.totalEarned.toLocaleString()}`,
       icon: TrendingUp,
       color: "bg-pink-500",
+      onClick: () => (window.location.href = "/transactions"),
       change: "Lifetime earnings",
     },
     {
@@ -344,67 +346,8 @@ const ShopOwnerDashboard = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => (window.location.href = "/coming-soon")}
-              className="w-full mt-6 py-3 border border-primary text-primary 
-                       hover:bg-primary/10 rounded-lg font-medium"
-            >
-              Shop Settings
-            </button>
           </div>
 
-          {/* Quick Links */}
-          <div
-            className="bg-white dark:bg-gray-800 rounded-xl border border-border-default 
-                         dark:border-gray-700 p-6"
-          >
-            <h2 className="text-xl font-semibold text-text-main dark:text-gray-200 mb-6">
-              Quick Actions
-            </h2>
-
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => (window.location.href = "/shop-owner/inventory")}
-                className="p-4 border border-border-default dark:border-gray-700 
-                         rounded-lg hover:border-primary hover:bg-primary/5 
-                         transition-colors text-center"
-              >
-                <Package className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="font-medium text-sm">Manage Inventory</p>
-              </button>
-
-              <button
-                onClick={() => (window.location.href = "/shop-owner/orders")}
-                className="p-4 border border-border-default dark:border-gray-700 
-                         rounded-lg hover:border-primary hover:bg-primary/5 
-                         transition-colors text-center"
-              >
-                <ShoppingBag className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="font-medium text-sm">Process Orders</p>
-              </button>
-
-              <button
-                onClick={() => (window.location.href = "/shop-owner/messages")}
-                className="p-4 border border-border-default dark:border-gray-700 
-                         rounded-lg hover:border-primary hover:bg-primary/5 
-                         transition-colors text-center"
-              >
-                <MessageCircle className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="font-medium text-sm">Messages</p>
-              </button>
-
-              <button
-                onClick={() => (window.location.href = "/coming-soon")}
-                className="p-4 border border-border-default dark:border-gray-700 
-                         rounded-lg hover:border-primary hover:bg-primary/5 
-                         transition-colors text-center"
-              >
-                <Activity className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="font-medium text-sm">View Analytics</p>
-              </button>
-
-            </div>
-          </div>
         </div>
       </div>
     </div>

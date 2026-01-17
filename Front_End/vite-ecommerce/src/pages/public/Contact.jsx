@@ -136,6 +136,7 @@ const Contact = () => {
                     onClose={() => setIsChatOpen(false)}
                     shopId={supportShop.shop_id}
                     shopName="InatGebeya Support"
+                    isSupport={true}
                 />
             )}
         </div>

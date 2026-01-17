@@ -61,6 +61,17 @@ const Checkout = () => {
       return;
     }
 
+    // MANDATORY: Check for profile completion (Phone, ID Number, ID Image)
+    const hasPhone = !!user?.phone;
+    const hasIDNumber = !!user?.identification?.fan_number;
+    const hasIDImage = !!user?.identification?.id_image_url;
+
+    if (!hasPhone || !hasIDNumber || !hasIDImage) {
+      toast.error("Please complete your profile (Phone, National ID, and ID Image) before ordering.");
+      navigate("/profile");
+      return;
+    }
+
     if (cartItems.length === 0) {
       toast.error("Your cart is empty");
       return;

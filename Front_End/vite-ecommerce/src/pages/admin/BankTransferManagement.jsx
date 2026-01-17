@@ -4,6 +4,7 @@ import { CheckCircle, XCircle, Eye, Filter, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 const BankTransferManagement = () => {
+    const [view, setView] = useState("pending");
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterBank, setFilterBank] = useState("all");
@@ -18,8 +19,12 @@ const BankTransferManagement = () => {
     ];
 
     useEffect(() => {
-        fetchPendingPayments();
-    }, []);
+        if (view === "pending") {
+            fetchPendingPayments();
+        } else {
+            fetchHistory();
+        }
+    }, [view]);
 
     const fetchPendingPayments = async () => {
         setLoading(true);
@@ -31,6 +36,21 @@ const BankTransferManagement = () => {
         } catch (error) {
             console.error("Fetch payments error:", error);
             toast.error("Failed to load pending payments");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchHistory = async () => {
+        setLoading(true);
+        try {
+            const response = await bankTransferAPI.getHistory();
+            if (response.success) {
+                setPayments(response.data);
+            }
+        } catch (error) {
+            console.error("Fetch history error:", error);
+            toast.error("Failed to load transfer history");
         } finally {
             setLoading(false);
         }
@@ -92,6 +112,21 @@ const BankTransferManagement = () => {
                 </div>
 
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mr-4">
+                        <button
+                            onClick={() => setView("pending")}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${view === 'pending' ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                        >
+                            Pending
+                        </button>
+                        <button
+                            onClick={() => setView("history")}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${view === 'history' ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                        >
+                            History
+                        </button>
+                    </div>
+
                     <Filter className="w-4 h-4 text-text-muted" />
                     {banks.map(bank => (
                         <button
@@ -119,9 +154,13 @@ const BankTransferManagement = () => {
                     <div className="bg-gray-100 dark:bg-gray-700/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <CheckCircle className="w-8 h-8 text-status-success" />
                     </div>
-                    <h3 className="text-lg font-semibold text-text-main dark:text-gray-200">No Pending Payments</h3>
+                    <h3 className="text-lg font-semibold text-text-main dark:text-gray-200">
+                        {view === 'pending' ? 'No Pending Payments' : 'No History Found'}
+                    </h3>
                     <p className="text-text-secondary dark:text-gray-400 mt-2">
-                        All bank transfers have been processed. Good job!
+                        {view === 'pending'
+                            ? 'All bank transfers have been processed. Good job!'
+                            : 'You haven\'t processed any bank transfers yet.'}
                     </p>
                 </div>
             ) : (
@@ -138,6 +177,11 @@ const BankTransferManagement = () => {
                                             <span className="px-2 py-1 rounded text-xs font-bold bg-primary/10 text-primary uppercase">
                                                 {payment.bank_type}
                                             </span>
+                                            {payment.status !== 'PENDING' && (
+                                                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${payment.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                    {payment.status}
+                                                </span>
+                                            )}
                                             <span className="text-xs text-text-muted dark:text-gray-500">
                                                 ID: #{payment.id} • {new Date(payment.created_at).toLocaleString()}
                                             </span>
@@ -145,6 +189,11 @@ const BankTransferManagement = () => {
                                         <h3 className="font-bold text-text-main dark:text-gray-100 text-lg">
                                             {payment.customer_name}
                                         </h3>
+                                        {payment.rejection_reason && (
+                                            <p className="text-xs text-red-600 font-medium mt-1 italic">
+                                                Reason: {payment.rejection_reason}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="text-right">
                                         <div className="text-xl font-black text-primary">
@@ -166,54 +215,56 @@ const BankTransferManagement = () => {
                                         </div>
 
                                         <div className="flex items-center gap-3">
-                                            {rejectionDialog?.paymentId === payment.id ? (
-                                                <div className="flex-1 space-y-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
-                                                    <textarea
-                                                        placeholder="Reason for rejection (e.g., Transaction ID not found, Receipt blurry)"
-                                                        value={rejectionReason}
-                                                        onChange={(e) => setRejectionReason(e.target.value)}
-                                                        className="w-full p-2 text-sm rounded border border-red-200 dark:border-red-800 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-red-500 outline-none"
-                                                        rows="2"
-                                                        autoFocus
-                                                    />
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => handleAction(payment.bank_type, payment.id, 'reject', rejectionReason)}
-                                                            disabled={!rejectionReason.trim() || processingId === payment.id}
-                                                            className="flex-1 bg-red-600 text-white py-2 rounded font-bold text-sm hover:bg-red-700 disabled:opacity-50"
-                                                        >
-                                                            Confirm Reject
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setRejectionDialog(null);
-                                                                setRejectionReason("");
-                                                            }}
-                                                            className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded text-sm dark:text-gray-300"
-                                                        >
-                                                            Cancel
-                                                        </button>
+                                            {view === 'pending' && (
+                                                rejectionDialog?.paymentId === payment.id ? (
+                                                    <div className="flex-1 space-y-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
+                                                        <textarea
+                                                            placeholder="Reason for rejection (e.g., Transaction ID not found, Receipt blurry)"
+                                                            value={rejectionReason}
+                                                            onChange={(e) => setRejectionReason(e.target.value)}
+                                                            className="w-full p-2 text-sm rounded border border-red-200 dark:border-red-800 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-red-500 outline-none"
+                                                            rows="2"
+                                                            autoFocus
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => handleAction(payment.bank_type, payment.id, 'reject', rejectionReason)}
+                                                                disabled={!rejectionReason.trim() || processingId === payment.id}
+                                                                className="flex-1 bg-red-600 text-white py-2 rounded font-bold text-sm hover:bg-red-700 disabled:opacity-50"
+                                                            >
+                                                                Confirm Reject
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setRejectionDialog(null);
+                                                                    setRejectionReason("");
+                                                                }}
+                                                                className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded text-sm dark:text-gray-300"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleAction(payment.bank_type, payment.id, 'approve')}
-                                                        disabled={processingId === payment.id}
-                                                        className="flex-1 flex items-center justify-center gap-2 bg-status-success text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50"
-                                                    >
-                                                        {processingId === payment.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
-                                                        Approve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleAction(payment.bank_type, payment.id, 'reject')}
-                                                        disabled={processingId === payment.id}
-                                                        className="flex-1 flex items-center justify-center gap-2 bg-status-error text-white py-3 rounded-lg font-bold hover:bg-red-600 transition-colors disabled:opacity-50"
-                                                    >
-                                                        <XCircle className="w-5 h-5" />
-                                                        Reject
-                                                    </button>
-                                                </>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleAction(payment.bank_type, payment.id, 'approve')}
+                                                            disabled={processingId === payment.id}
+                                                            className="flex-1 flex items-center justify-center gap-2 bg-status-success text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-colors disabled:opacity-50"
+                                                        >
+                                                            {processingId === payment.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                                                            Approve
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleAction(payment.bank_type, payment.id, 'reject')}
+                                                            disabled={processingId === payment.id}
+                                                            className="flex-1 flex items-center justify-center gap-2 bg-status-error text-white py-3 rounded-lg font-bold hover:bg-red-600 transition-colors disabled:opacity-50"
+                                                        >
+                                                            <XCircle className="w-5 h-5" />
+                                                            Reject
+                                                        </button>
+                                                    </>
+                                                )
                                             )}
                                         </div>
                                     </div>

@@ -26,7 +26,7 @@ export const getEffectiveOrderStatus = (order) => {
     if (ds === 'assigned') return 'delivery_assigned';
 
     // 3. Admin/System approval
-    if (s === 'approved' || s === 'admin_approved') return 'admin_approved';
+    if (s === 'approved' || s === 'admin_approved' || s === 'confirmed') return 'admin_approved';
 
     // 4. Payment status
     if (ps === 'paid') return 'paid';

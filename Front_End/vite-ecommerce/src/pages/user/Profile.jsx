@@ -11,6 +11,7 @@ import {
   LogOut,
   Shield,
   Upload,
+  AlertCircle,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { usersAPI } from "../../api/users.api";
@@ -316,6 +317,17 @@ const Profile = () => {
                            dark:border-gray-700 p-6"
             >
               <form onSubmit={handleProfileUpdate}>
+                {(!user?.phone || !user?.identification?.fan_number || !user?.identification?.id_image_url) && (
+                  <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-yellow-800 dark:text-yellow-300">Complete Your Profile</h4>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                        You must provide your <strong>Phone Number</strong>, <strong>National ID (Fan Number)</strong>, and <strong>National ID Image</strong> before you can place orders or make payments.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                   {/* Left Column: Personal Information */}
                   <div className="space-y-6">
